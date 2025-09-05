@@ -15,18 +15,9 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@MappedSuperclass
 public abstract class Account {
 
-    public Account(Money balance, AccountHolder primaryOwner) {
-        this.balance = balance;
-        this.primaryOwner = primaryOwner;
-    }
-
-    public Account(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        this.balance = balance;
-        this.primaryOwner = primaryOwner;
-        this.secondaryOwner = secondaryOwner;
-    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -69,8 +60,32 @@ public abstract class Account {
     @JoinColumn(name = "primary_owner_id", nullable = false)
     private AccountHolder primaryOwner;
 
-    @ManyToOne(optional = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "secondary_owner_id", nullable = true)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "secondary_owner_id")
     private AccountHolder secondaryOwner;
+
+
+    // CONSTRUCTORES
+    // Constructor para un propietario principal
+    public Account(Money balance, String secretKey, AccountHolder primaryOwner) {
+        this.balance = balance;
+        this.secretKey = secretKey;
+        this.primaryOwner = primaryOwner;
+        this.creationDate = LocalDate.now();
+        this.status = AccountStatus.ACTIVE;
+        this.penaltyFee = new Money(new BigDecimal("40"));
+    }
+
+    // Constructor para cuenta con dos propietarios
+    public Account(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
+        this.balance = balance;
+        this.secretKey = secretKey;
+        this.primaryOwner = primaryOwner;
+        this.secondaryOwner = secondaryOwner;
+        this.creationDate = LocalDate.now();
+        this.status = AccountStatus.ACTIVE;
+        this.penaltyFee = new Money(new BigDecimal("40"));
+    }
+
 
 }
