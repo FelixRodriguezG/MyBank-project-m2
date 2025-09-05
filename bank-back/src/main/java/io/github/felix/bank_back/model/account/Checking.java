@@ -5,11 +5,14 @@ import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 import java.util.Currency;
 
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 @Entity
 @Table(name = "checking_accounts")
 public class Checking extends Account {
@@ -38,32 +41,31 @@ public class Checking extends Account {
     public Checking(Money balance, AccountHolder primaryOwner, String currencyCode) {
         super(balance, primaryOwner);
         Currency currency = Currency.getInstance(currencyCode);
-        this.minimumBalance = new Money(new java.math.BigDecimal("250"), currency);
-        this.monthlyMaintenanceFee = new Money(new java.math.BigDecimal("12"), currency);
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
     }
 
     // Constructor con propietario principal y secundario y currency personalizado
     public Checking(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String currencyCode) {
         super(balance, primaryOwner, secondaryOwner);
         Currency currency = Currency.getInstance(currencyCode);
-        this.minimumBalance = new Money(new java.math.BigDecimal("250"), currency);
-        this.monthlyMaintenanceFee = new Money(new java.math.BigDecimal("12"), currency);
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
     }
 
     // Constructor solo con propietario principal y Money ya configurado
     public Checking(Money balance, AccountHolder primaryOwner) {
         super(balance, primaryOwner);
         Currency currency = balance.getCurrencyCode();
-        this.minimumBalance = new Money(new java.math.BigDecimal("250"), currency);
-        this.monthlyMaintenanceFee = new Money(new java.math.BigDecimal("12"), currency);
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
     }
 
     // Constructor con propietario principal, secundario y Money ya configurado
     public Checking(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
         super(balance, primaryOwner, secondaryOwner);
         Currency currency = balance.getCurrencyCode();
-        this.minimumBalance = new Money(new java.math.BigDecimal("250"), currency);
-        this.monthlyMaintenanceFee = new Money(new java.math.BigDecimal("12"), currency);
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+        this.monthlyMaintenanceFee = new Money( BigDecimal.valueOf(12), currency);
     }
-
 }
