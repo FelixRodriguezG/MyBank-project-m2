@@ -1,6 +1,6 @@
 package io.github.felix.bank_back.model.account;
 
-import io.github.felix.bank_back.model.embedded.Money;
+import io.github.felix.bank_back.model.account.embedded.Money;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
 import lombok.Data;

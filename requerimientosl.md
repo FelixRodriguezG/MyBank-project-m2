@@ -1,12 +1,9 @@
 # Bank Back  
-M2 - Semana 6 - 1 al 5 de Septiembre  
+M2 - Semana 6 - 1 al 5 de septiembre  
 
 **Día 5 - Proyecto Práctico Módulo 2**  
 
-## Resumen del proyecto  
-Este proyecto debe completarse de manera **individual**. No está permitido colaborar con compañeros en esta tarea. Si necesitas ayuda, debes contactar con tu equipo de instrucción.  
-
-El proyecto está diseñado para ser desafiante y debe completarse lo más exhaustivamente posible.  
+## Resumen del proyecto
 
 En este proyecto construirás un **sistema bancario**. Debes cumplir con todos los siguientes requisitos:  
 
@@ -135,7 +132,7 @@ Tienen:
 ### Detección de fraude  
 El sistema debe congelar la cuenta si detecta fraude.  
 Patrones:  
-- Transacciones en 24h > 150% del mayor total diario registrado  
+- Transacciones en 24 h > 150% del mayor total diario registrado  
 - Más de 2 transacciones en una cuenta en <1 segundo  
 
 ### Despliegue en servidor externo  

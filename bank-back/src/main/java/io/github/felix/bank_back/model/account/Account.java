@@ -1,10 +1,11 @@
 package io.github.felix.bank_back.model.account;
 
 import io.github.felix.bank_back.model.account.enums.AccountStatus;
-import io.github.felix.bank_back.model.embedded.Money;
+import io.github.felix.bank_back.model.account.embedded.Money;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,8 @@ public abstract class Account {
 
     @NotNull
     @Column(nullable = false)
+
+    @Pattern(regexp = "^\\d{4}$", message = "La clave secreta debe contener exactamente 4 dígitos numéricos.")
     private String secretKey;
 
     @NotNull
@@ -65,6 +68,14 @@ public abstract class Account {
     private AccountHolder secondaryOwner;
 
 
+    // Funciones de utilidad
+    public boolean isBelowMinimumBalance() {
+        return this.balance.getAmount().compareTo(getMinimumBalance().getAmount()) < 0;
+    }
+    public abstract Money getMinimumBalance();
+
+
+
     // CONSTRUCTORES
     // Constructor para un propietario principal
     public Account(Money balance, String secretKey, AccountHolder primaryOwner) {
@@ -88,4 +99,7 @@ public abstract class Account {
     }
 
 
+    protected void onCreate() {
+        this.creationDate = LocalDate.now();
+    }
 }

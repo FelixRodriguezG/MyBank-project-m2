@@ -36,5 +36,6 @@ public class PersonalData {
     @NotBlank
     @Email
     @Column(nullable = false, unique = true)
+    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Email format is invalid")
     private String email;
 }

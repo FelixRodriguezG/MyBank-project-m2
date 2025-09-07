@@ -1,0 +1,25 @@
+package io.github.felix.bank_back.dto.user;
+
+import io.github.felix.bank_back.model.user.embedded.Address;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.time.LocalDate;
+
+/**
+ * DTO de creación de AccountHolder.
+ */
+@Data
+public class AccountHolderCreateDTO {
+    @NotBlank
+    private String name;
+
+    @NotNull
+    private LocalDate dateOfBirth;
+
+    @NotNull
+    private Address primaryAddress;
+
+    private Address mailingAddress; // opcional
+}
