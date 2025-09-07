@@ -2,10 +2,7 @@ package io.github.felix.bank_back.model.user.embedded;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +24,8 @@ public class PersonalData {
 
     @NotNull
     @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "La fecha debe tener el formato yyyy-MM-dd")
+    @Past(message = "La fecha de nacimiento debe ser en el pasado")
+    @Column(nullable = false)
     private String dateOfBirth;
 
     @NotBlank

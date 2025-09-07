@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
 @Data
@@ -26,8 +27,31 @@ public class ThirdParty {
     private String name;
 
     @NotBlank
-    @Size(min = 64, max = 128)
+    @Column(nullable = false, length = 60)
     private String hashedKey;
 
+    @Transient
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    // Setea la key hasheada
+    public void setPassword(String key) {
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña no puede estar vacía");
+        }
+        this.hashedKey = passwordEncoder.encode(key);
+    }
+
+    // Verifica si la contraseña ingresada coincide con la almacenada
+    public boolean verifyPassword(String key) {
+        if (key == null || this.hashedKey == null) {
+            return false;
+        }
+        return passwordEncoder.matches(key, this.hashedKey);
+    }
+
+    public ThirdParty(String name, String key) {
+        this.name = name;
+        setPassword(key);
+    }
 
 }

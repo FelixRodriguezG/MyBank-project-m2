@@ -15,10 +15,7 @@ import java.util.Currency;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Entity
-@Table(name = "checking_accounts")
 public class Checking extends Account {
-
-
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "amount",       column = @Column(name = "minimum_balance_amount", precision =
@@ -29,7 +26,6 @@ public class Checking extends Account {
     @Min(250)
     private Money minimumBalance;// Balance mínimo: 250 USD
 
-    // Cuota de mantenimiento mensual (que se cobra al final de cada mes): 12 USD
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "amount",       column = @Column(name = "monthly_maintenance_fee_amount",
@@ -41,42 +37,10 @@ public class Checking extends Account {
     })
     private Money monthlyMaintenanceFee; // Cuota de mantenimiento mensual: 12 USD
 
-    // Última fecha en la que se aplicó la cuota de mantenimiento
-    private LocalDate lastMaintenanceFeeDate;
-
-
-    // Constructor con propietario principal solamente
-    public Checking(Money balance, String secretKey, AccountHolder primaryOwner) {
-        super(balance, secretKey, primaryOwner);
-        initializeDefaults(balance.getCurrencyCode());
-    }
-
-    // Constructor con propietario principal y secundario
-    public Checking(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
-        initializeDefaults(balance.getCurrencyCode());
-    }
-
-    // Constructor con currency personalizado
-    public Checking(Money balance, String secretKey, AccountHolder primaryOwner, String currencyCode) {
-        super(balance, secretKey, primaryOwner);
-        initializeDefaults(Currency.getInstance(currencyCode));
-    }
-
-    // Constructor con propietario principal y secundario y currency personalizado
-    public Checking(Money balance, String secretKey, AccountHolder primaryOwner,
-                    AccountHolder secondaryOwner, String currencyCode) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
-        initializeDefaults(Currency.getInstance(currencyCode));
-    }
+    private LocalDate lastMaintenanceFeeDate;// Última fecha en la que se aplicó la cuota de mantenimiento
 
     /* Metodos privados */
-    // Inicializa los valores por defecto para minimumBalance y monthlyMaintenanceFee
-    private void initializeDefaults(Currency currency) {
-        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
-        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
-        this.lastMaintenanceFeeDate = getCreationDate(); // Inicializar con fecha de creación
-    }
+
 
     // Comprueba si el balance está por debajo del mínimo
     public boolean isBelowMinimumBalance() {
@@ -118,13 +82,36 @@ public class Checking extends Account {
     }
 
 
-    // JPA Lifecycle callback. Inicializa lastMaintenanceFeeDate al crear la cuenta si es null
-    @PrePersist
-    protected void onCreate() {
-        super.onCreate();
-        if (lastMaintenanceFeeDate == null) {
-            lastMaintenanceFeeDate = getCreationDate();
-        }
+    // Constructor con propietario principal solamente
+    public Checking(Money balance, String secretKey, AccountHolder primaryOwner) {
+        super(balance, secretKey, primaryOwner);
+        initializeDefaults(balance.getCurrencyCode());
+    }
+
+    // Constructor con propietario principal y secundario
+    public Checking(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
+        super(balance, secretKey, primaryOwner, secondaryOwner);
+        initializeDefaults(balance.getCurrencyCode());
+    }
+
+    // Constructor con currency personalizado
+    public Checking(Money balance, String secretKey, AccountHolder primaryOwner, String currencyCode) {
+        super(balance, secretKey, primaryOwner);
+        initializeDefaults(Currency.getInstance(currencyCode));
+    }
+
+    // Constructor con propietario principal y secundario y currency personalizado
+    public Checking(Money balance, String secretKey, AccountHolder primaryOwner,
+                    AccountHolder secondaryOwner, String currencyCode) {
+        super(balance, secretKey, primaryOwner, secondaryOwner);
+        initializeDefaults(Currency.getInstance(currencyCode));
+    }
+
+    // Metodo para inicializar los valores por defecto en los constructores
+    private void initializeDefaults(Currency currency) {
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
+        this.lastMaintenanceFeeDate = getCreationDate(); // Inicializar con fecha de creación
     }
 
 }
