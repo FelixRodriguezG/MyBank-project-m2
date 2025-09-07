@@ -1,6 +1,7 @@
 package io.github.felix.bank_back.dto.user;
 
 import io.github.felix.bank_back.model.user.embedded.Address;
+import io.github.felix.bank_back.model.user.embedded.PersonalData;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -17,6 +18,9 @@ public class AccountHolderCreateDTO {
 
     @NotNull
     private LocalDate dateOfBirth;
+
+    @NotNull
+    private PersonalData personalData;
 
     @NotNull
     private Address primaryAddress;
