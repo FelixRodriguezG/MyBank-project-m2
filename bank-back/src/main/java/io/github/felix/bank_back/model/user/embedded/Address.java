@@ -14,7 +14,7 @@ public class Address {
     private String city;
     @NotBlank
     @Pattern(regexp = "[A-Za-z0-9]{5,10}", message = "El código postal debe tener entre 5 y 10 caracteres alfanuméricos")
-    private String zipCode;
+    private String postalCode;
     @NotBlank
     private String country;
 }

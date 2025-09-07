@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@MappedSuperclass
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Account {
 
     @Id
@@ -67,16 +67,7 @@ public abstract class Account {
     @JoinColumn(name = "secondary_owner_id")
     private AccountHolder secondaryOwner;
 
-
-    // Funciones de utilidad
-    public boolean isBelowMinimumBalance() {
-        return this.balance.getAmount().compareTo(getMinimumBalance().getAmount()) < 0;
-    }
-    public abstract Money getMinimumBalance();
-
-
-
-    // CONSTRUCTORES
+    // ***************   CONSTRUCTORES ****************
     // Constructor para un propietario principal
     public Account(Money balance, String secretKey, AccountHolder primaryOwner) {
         this.balance = balance;
@@ -98,8 +89,4 @@ public abstract class Account {
         this.penaltyFee = new Money(new BigDecimal("40"));
     }
 
-
-    protected void onCreate() {
-        this.creationDate = LocalDate.now();
-    }
 }
