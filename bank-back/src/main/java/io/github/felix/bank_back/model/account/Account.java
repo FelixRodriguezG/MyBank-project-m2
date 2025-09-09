@@ -2,6 +2,7 @@ package io.github.felix.bank_back.model.account;
 
 import io.github.felix.bank_back.model.account.enums.AccountStatus;
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.account.enums.AccountType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,12 @@ import java.time.LocalDate;
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Account {
 
+    // Atributos comunes a todas las cuentas
+    //Id, balance, secretKey, creationDate, status, accountType, penaltyFee, primaryOwner, secondaryOwner
+
+    // Constante para la tarifa de penalización
+    private static Money DEFAULT_PENALTY_FEE = new Money(new BigDecimal("40"));
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,11 +37,10 @@ public abstract class Account {
             @AttributeOverride(name = "currencyCode", column = @Column(name = "balance_currency", length = 3, nullable = false))
     })
     @NotNull
-    private Money balance;
+    private Money balance; // Saldo de la cuenta
 
     @NotNull
     @Column(nullable = false)
-
     @Pattern(regexp = "^\\d{4}$", message = "La clave secreta debe contener exactamente 4 dígitos numéricos.")
     private String secretKey;
 
@@ -46,19 +52,20 @@ public abstract class Account {
     @NotNull
     private AccountStatus status;
 
+    @NotNull
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AccountType accountType;
+
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "amount",       column = @Column(name = "penaltyFee_amount", precision = 19, scale = 2, nullable = false)),
             @AttributeOverride(name = "currencyCode", column = @Column(name = "penaltyFee_currency", length = 3, nullable = false))
     })
     @NotNull
-    private Money penaltyFee = new Money(new BigDecimal("40"));
+    private Money penaltyFee;
 
-    /* Relaciones con AccountHolder (Propietarios de la cuenta)
-    * * -> Primary Owner y Secondary Owner son obligatorios.
-    * * -> La relación es ManyToOne porque un AccountHolder puede tener muchas cuentas.
-    * * -> La relación es EAGER porque siempre que se consulte una cuenta, se querrá saber quiénes son sus propietarios.
-    */
+    // Relaciones con AccountHolder
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "primary_owner_id", nullable = false)
     private AccountHolder primaryOwner;
@@ -69,24 +76,31 @@ public abstract class Account {
 
     // ***************   CONSTRUCTORES ****************
     // Constructor para un propietario principal
-    public Account(Money balance, String secretKey, AccountHolder primaryOwner) {
+    public Account( Money balance, String secretKey, AccountHolder primaryOwner, AccountType accountType) {
         this.balance = balance;
         this.secretKey = secretKey;
         this.primaryOwner = primaryOwner;
         this.creationDate = LocalDate.now();
         this.status = AccountStatus.ACTIVE;
-        this.penaltyFee = new Money(new BigDecimal("40"));
+        this.penaltyFee = DEFAULT_PENALTY_FEE;
+        this.accountType = accountType;
+
     }
 
     // Constructor para cuenta con dos propietarios
-    public Account(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
+    public Account(Money balance, String secretKey, AccountHolder primaryOwner,
+                    AccountHolder secondaryOwner, AccountType accountType) {
         this.balance = balance;
         this.secretKey = secretKey;
         this.primaryOwner = primaryOwner;
         this.secondaryOwner = secondaryOwner;
         this.creationDate = LocalDate.now();
         this.status = AccountStatus.ACTIVE;
-        this.penaltyFee = new Money(new BigDecimal("40"));
+        this.penaltyFee = DEFAULT_PENALTY_FEE;
+        this.accountType = accountType;
+
     }
+
+    public abstract String getAccountTypeInfo();
 
 }

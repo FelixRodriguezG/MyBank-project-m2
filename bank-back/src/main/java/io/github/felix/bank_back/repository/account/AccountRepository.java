@@ -2,11 +2,13 @@ package io.github.felix.bank_back.repository.account;
 
 import io.github.felix.bank_back.dto.account.AccountResponseDTO;
 import io.github.felix.bank_back.model.account.Account;
+import io.github.felix.bank_back.model.account.enums.AccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -16,35 +18,25 @@ import java.util.List;
  */
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-
-    // * Encuentra todas las cuentas donde el owner coincida ya sea como primary o secondary.
+    // --- Búsqueda por propietarios ---
     List<Account> findByPrimaryOwnerIdOrSecondaryOwnerId(Long primaryId, Long secondaryId);
-
-    // * Encuentra todas las cuentas asociadas a un owner específico.
     List<Account> findByPrimaryOwnerId(Long ownerId);
-
-    // * Encuentra todas las cuentas asociadas a un secondary owner específico.
     List<Account> findBySecondaryOwnerId(Long ownerId);
 
-    // * Encuentra cuentas filtrando por estado (ACTIVE o FROZEN)
-    List<Account> findByStatus(String status);
+    // --- Búsqueda por estado y tipo ---
+    List<Account> findByStatus(AccountStatus status);
+    List<Account> findByAccountType(String accountType);
 
-    // * Encuentra una cuenta por su secretKey única. -> Util para autenticación.
-    Account findBySecretKey(String secretKey);
+    // --- Búsqueda por balance ---
+    @Query("SELECT a FROM Account a WHERE a.balance.amount < a.minimumBalance.amount")
+    List<Account> findByBalanceAmountLessThanMinimumBalance();
 
-    /**
-     * Encuentra todas las cuentas cuyo balance sea menor a su Balance minimo.
-     * Útil para aplicar PenaltyFee.
-     */
-    @Query("SELECT a FROM Account a WHERE a.balance.amount < :amount")
-    List<Account> findByBalanceAmountLessThan(@Param("amount") BigDecimal amount);;
+    @Query("SELECT a FROM Account a WHERE a.accountType = 'STUDENT' AND a.balance.amount < :amount")
+    List<Account> findStudentAccountsByBalanceLessThan(@Param("amount") BigDecimal amount);
 
-    /**
-     * Encuentra todas las cuentas cuyo balance sea mayor que la cantidad especificada.
-     * Útil para validaciones o reportes.
-     */
-    @Query("SELECT a FROM Account a WHERE a.balance.amount > :amount")
+    // --- Búsqueda por fecha ---
+    @Query("SELECT a FROM Account a WHERE a.lastMaintenanceFeeDate < :date")
+    List<Account> findByLastMaintenanceFeeDateBefore(@Param("date") LocalDate date);
 
-    List<Account> findByBalanceGreaterThan(@Param("amount") BigDecimal amount);
-
+    // Busca cuentas de tipo c
 }

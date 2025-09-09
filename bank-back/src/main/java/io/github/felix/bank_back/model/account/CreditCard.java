@@ -1,6 +1,7 @@
 package io.github.felix.bank_back.model.account;
 
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.account.enums.AccountType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -22,6 +23,12 @@ import java.util.Currency;
 @EqualsAndHashCode(callSuper = false)
 @Entity
 public class CreditCard extends Account {
+
+    // ==================== SAVINGS_INFO ====================
+    // Herencia de Account
+    // id, balance, secretKey, primaryOwner, secondaryOwner, creationDate, status, accountType
+
+
 
     // Constantes según los requisitos
     private static final BigDecimal DEFAULT_CREDIT_LIMIT = new BigDecimal("100");
@@ -47,20 +54,20 @@ public class CreditCard extends Account {
 
     // * Constructor con propietario principal y valores por defecto
     public CreditCard(Money balance, String secretKey, AccountHolder primaryOwner) {
-        super(balance, secretKey, primaryOwner);
+        super(balance, secretKey, primaryOwner, AccountType.CREDIT_CARD);
         initializeDefaults(balance.getCurrencyCode());
     }
 
     // * Constructor con dos propietarios y valores por defecto
     public CreditCard(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
+        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.CREDIT_CARD);
         initializeDefaults(balance.getCurrencyCode());
     }
 
     // * Constructor con propietario principal, límite de crédito e interés personalizados
     public CreditCard(Money balance, String secretKey, AccountHolder primaryOwner,
                       Money creditLimit, BigDecimal interestRate) {
-        super(balance, secretKey, primaryOwner);
+        super(balance, secretKey, primaryOwner, AccountType.CREDIT_CARD);
         setCreditLimit(creditLimit); // Validación automática
         setInterestRate(interestRate); // Validación automática
         this.lastInterestDate = getCreationDate();
@@ -69,29 +76,9 @@ public class CreditCard extends Account {
     // * Constructor con dos propietarios, límite de crédito e interés personalizados
     public CreditCard(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner,
                       Money creditLimit, BigDecimal interestRate) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
+        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.CREDIT_CARD);
         setCreditLimit(creditLimit); // Validación automática
         setInterestRate(interestRate); // Validación automática
-        this.lastInterestDate = getCreationDate();
-    }
-
-
-    // * Constructor que crea balance con currency específico
-    public CreditCard(BigDecimal balanceAmount, String secretKey, AccountHolder primaryOwner,
-                      String currencyCode, BigDecimal creditLimitAmount, BigDecimal interestRate) {
-        Currency currency = Currency.getInstance(currencyCode);
-        Money balance = new Money(balanceAmount, currency);
-        Money creditLimit = new Money(creditLimitAmount, currency);
-
-        this.setBalance(balance);
-        this.setSecretKey(secretKey);
-        this.setPrimaryOwner(primaryOwner);
-        this.setCreationDate(LocalDate.now());
-        this.setStatus(io.github.felix.bank_back.model.account.enums.AccountStatus.ACTIVE);
-        this.setPenaltyFee(new Money(new BigDecimal("40"), currency));
-
-        setCreditLimit(creditLimit);
-        setInterestRate(interestRate);
         this.lastInterestDate = getCreationDate();
     }
 
@@ -104,7 +91,7 @@ public class CreditCard extends Account {
         this.lastInterestDate = getCreationDate();
     }
 
-    // ==================== VALIDACIONES ====================
+    // ==================== SETTERS CON VALIDACIÓN ====================
 
     // * Valida que el límite de crédito esté en el rango permitido
     public boolean isValidCreditLimit(Money creditLimit) {
@@ -113,16 +100,6 @@ public class CreditCard extends Account {
         return amount.compareTo(DEFAULT_CREDIT_LIMIT) >= 0 &&
                 amount.compareTo(MAX_CREDIT_LIMIT) <= 0;
     }
-
-    // * Valida que la tasa de interés esté en el rango permitido
-    public boolean isValidInterestRate(BigDecimal interestRate) {
-        if (interestRate == null) return false;
-        return interestRate.compareTo(MIN_INTEREST_RATE) >= 0 &&
-                interestRate.compareTo(new BigDecimal("1.0")) <= 0; // Máximo 100%
-    }
-
-    // ==================== SETTERS CON VALIDACIÓN ====================
-
     //* Establece el límite de crédito con validación
     public void setCreditLimit(Money creditLimit) {
         if (!isValidCreditLimit(creditLimit)) {
@@ -135,6 +112,12 @@ public class CreditCard extends Account {
         this.creditLimit = creditLimit;
     }
 
+    // * Valida que la tasa de interés esté en el rango permitido
+    public boolean isValidInterestRate(BigDecimal interestRate) {
+        if (interestRate == null) return false;
+        return interestRate.compareTo(MIN_INTEREST_RATE) >= 0 &&
+                interestRate.compareTo(new BigDecimal("1.0")) <= 0; // Máximo 100%
+    }
     //* Establece la tasa de interés con validación
     public void setInterestRate(BigDecimal interestRate) {
         if (!isValidInterestRate(interestRate)) {
@@ -257,18 +240,12 @@ public class CreditCard extends Account {
                 .multiply(new BigDecimal("100"));
     }
 
-    // * Retorna el tipo de cuenta
-    public String getType() {
-        return "CreditCard";
-    }
+    // ==================== INFORMACIÓN  ====================
 
     // * Obtiene información específica del tipo de cuenta
     public String getAccountTypeInfo() {
-        return String.format("Credit Card - Limit: %s, Available: %s, Debt: %s, Interest: %s%% monthly",
-                creditLimit,
-                getAvailableCredit(),
-                getCurrentDebt(),
-                interestRate.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_EVEN));
+        return "Cuenta de credito: Credito minimo 100, máximo configurable: 100000, Interés por defecto: 0.2" +
+                ", Mínimo configurable: 0.1. " + "El interés se aplica solo sobre saldos negativos.";
     }
 
     @Override

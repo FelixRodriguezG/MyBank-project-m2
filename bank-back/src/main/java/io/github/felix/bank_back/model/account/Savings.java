@@ -1,8 +1,10 @@
 package io.github.felix.bank_back.model.account;
 
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.account.enums.AccountType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -14,10 +16,20 @@ import java.util.Currency;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Entity
 public class Savings extends Account {
 
+    // ==================== SAVINGS_INFO ====================
+    // Hereda de Account
+    // id, balance, secretKey, primaryOwner, secondaryOwner, creationDate, status
+    // Atributos específicos de Savings
+    // minimumBalance, interestRate, lastInterestDate
+    // No tiene comisión mensual de mantenimiento pero si tiene penalización por debajo del balance mínimo
+    // Tiene interés anual que se aplica automáticamente si ha pasado un año desde el último interés aplicado
+
+    // ==================== CONSTANTES ====================
     // Constantes según los requisitos
     // interestRate por defecto 0.0025 (0.25%) y máximo 0.5 (50%)
     // minimumBalance por defecto 1000 y mínimo 100
@@ -31,57 +43,43 @@ public class Savings extends Account {
             @AttributeOverride(name = "amount", column = @Column(name = "minimum_balance_amount", precision = 19, scale = 2, nullable = false)),
             @AttributeOverride(name = "currencyCode", column = @Column(name = "minimum_balance_currency", length = 3, nullable = false))
     })
-    private Money minimumBalance;
+    private Money minimumBalance; // Balance mínimo requerido
 
     @Column(nullable = false, precision = 10, scale = 4)
-    private BigDecimal interestRate;
+    private BigDecimal interestRate; // Tasa de interés anual
 
     @Column(name = "last_interest_date")
-    private LocalDate lastInterestDate;
+    private LocalDate lastInterestDate; // Fecha del último interés aplicado
 
 
     // ==================== CONSTRUCTORES ====================
 
-    // Constructor con propietario principal y divisa(currentCode) personalizada
+    // Constructor con propietario principal
     public Savings(Money balance, String secretKey, AccountHolder primaryOwner) {
-        super(balance, secretKey, primaryOwner);
+        super(balance, secretKey, primaryOwner, AccountType.SAVINGS);
         initializeDefaults(balance.getCurrencyCode());
     }
 
-    // Constructor de cuenta con dos propietarios y divisa(currentCode) personalizada
+    // Constructor de cuenta con dos propietario
     public Savings(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
+        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.SAVINGS);
         initializeDefaults(balance.getCurrencyCode());
     }
 
+    // Constructor de cuenta con propietario principal y tasa de interés personalizada
     public Savings(Money balance, String secretKey, AccountHolder primaryOwner, BigDecimal interestRate) {
-        super(balance, secretKey, primaryOwner);
+        super(balance, secretKey, primaryOwner, AccountType.SAVINGS);
         initializeDefaults(balance.getCurrencyCode());
         setInterestRate(interestRate); // Usar el setter para validar la tasa de interés
     }
 
-    // Constructor de cuenta con dos propietarios y divisa por defecto en Money
+    // Constructor de cuenta con dos propietarios y tasa de interés personalizada
     public Savings(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner, BigDecimal interestRate) {
-        super(balance, secretKey, primaryOwner, secondaryOwner);
+        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.SAVINGS);
         initializeDefaults(balance.getCurrencyCode());
         setInterestRate(interestRate); // Usa setter para validación
     }
 
-    public Savings(Money balance, String secretKey, AccountHolder primaryOwner, String currencyCode, BigDecimal interestRate) {
-        super(balance, secretKey, primaryOwner);
-        Currency currency = Currency.getInstance(currencyCode);
-
-        // VALIDAR que el currency del balance coincida con el solicitado
-        if (!balance.getCurrencyCode().equals(currency)) {
-            throw new IllegalArgumentException(
-                    String.format("Divisa incorrecta: la divisa del balance es %s pero la solicitada es %s",
-                            balance.getCurrencyCode().getCurrencyCode(), currencyCode)
-            );
-        }
-
-        initializeDefaults(currency);
-        setInterestRate(interestRate);
-    }
 
     // ==================== MÉTODOS DE INICIALIZACIÓN ====================
 
@@ -104,21 +102,15 @@ public class Savings extends Account {
         return balanceAfterOperation.compareTo(this.getMinimumBalance().getAmount()) >= 0;
     }
 
-    // Valida que el interés esté dentro del rango permitido\
-    public boolean isValidInterestRate(BigDecimal rate) {
-        return rate != null &&
-               rate.compareTo(BigDecimal.ZERO) > 0 &&
-               rate.compareTo(MAX_INTEREST_RATE) <= 0;
-    }
-
-    public boolean isValidMinimumBalance(Money minBalance) {
-        return minBalance != null &&
-                minBalance.getAmount().compareTo(MIN_MINIMUM_BALANCE) >= 0;
-    }
-
     // ==================== SETTERS CON VALIDACIÓN -> (CONSTRUCTORES) ====================
 
-    // * Establece la tasa de interés con validación
+    // * Valida que el interés esté dentro del rango permitido\
+    public boolean isValidInterestRate(BigDecimal rate) {
+        return rate != null &&
+                rate.compareTo(BigDecimal.ZERO) > 0 &&
+                rate.compareTo(MAX_INTEREST_RATE) <= 0;
+    }
+    // * Establece la tasa de interés con validación (entre 0.0001 y 0.5)
     public void setInterestRate(BigDecimal interestRate) {
         if (!isValidInterestRate(interestRate)) {
             throw new IllegalArgumentException(
@@ -129,6 +121,11 @@ public class Savings extends Account {
         this.interestRate = interestRate;
     }
 
+    public boolean isValidMinimumBalance(Money minBalance) {
+        return minBalance != null &&
+                minBalance.getAmount().compareTo(MIN_MINIMUM_BALANCE) >= 0;
+    }
+    // * Establece el balance mínimo con validación (entre 100 y 1000)
     public void setMinimumBalance(Money minimumBalance) {
         if (!isValidMinimumBalance(minimumBalance)) {
             throw new IllegalArgumentException(
@@ -140,6 +137,8 @@ public class Savings extends Account {
     }
 
     // ==================== LÓGICA DE INTERESES ====================
+    // Esto deveria ejecutarse automáticamente una vez al año
+    // Podría implementarse con un servicio programado (scheduler)
 
     // * Verifica si debe aplicarse el interés anual (ha pasado un año)
     public boolean shouldApplyAnnualInterest() {
@@ -165,7 +164,7 @@ public class Savings extends Account {
         this.lastInterestDate=LocalDate.now();
         return true;
     }
-    // ==================== MÉTODOS DE IN ====================
+    // ==================== INFORMACIÓN ====================
 
     // * Obtiene la próxima fecha en la que se debe aplicar el interés anual
     public LocalDate getNextInterestDate() {
@@ -175,22 +174,16 @@ public class Savings extends Account {
         return lastInterestDate.plusYears(1);
     }
 
-    // Devuelve el tipo de cuenta como String
-    public String getAccountType() {
-        return "Savings";
-    }
 
-    // Información detallada del tipo de cuenta
+    // * Información de cuenta
+    @Override
     public String getAccountTypeInfo() {
-        return String.format("Savings Account - Min Balance: %s, Annual Interest: %s%%, Next Interest: %s",
-                minimumBalance,
-                interestRate.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_EVEN),
-                getNextInterestDate());
+        return "Cuenta de Ahorro - Saldo mínimo requerido, Interés anual aplicado automáticamente, Penalización por saldo bajo";
     }
 
     @Override
     public String toString() {
-        return String.format("Savings Account [ID: %d, Balance: %s, Min Balance: %s, Interest: %s%%, Owner: %s, Status: %s]",
+        return String.format("Cuenta de Ahorro [ID: %d, Saldo: %s, Saldo Mínimo: %s, Interés: %s%%, Titular: %s, Estado: %s]",
                 getId(),
                 getBalance(),
                 minimumBalance,
