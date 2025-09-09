@@ -24,7 +24,7 @@ public abstract class Account {
     //Id, balance, secretKey, creationDate, status, accountType, penaltyFee, primaryOwner, secondaryOwner
 
     // Constante para la tarifa de penalización
-    private static Money DEFAULT_PENALTY_FEE = new Money(new BigDecimal("40"));
+    public static Money DEFAULT_PENALTY_FEE = new Money(new BigDecimal("40"));
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
