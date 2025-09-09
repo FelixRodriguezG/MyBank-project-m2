@@ -116,11 +116,9 @@ public class Savings extends Account {
                 minBalance.getAmount().compareTo(MIN_MINIMUM_BALANCE) >= 0;
     }
 
-    // ==================== SETTERS CON VALIDACIÓN ====================
+    // ==================== SETTERS CON VALIDACIÓN -> (CONSTRUCTORES) ====================
 
-    /**
-     * Establece la tasa de interés con validación
-     */
+    // * Establece la tasa de interés con validación
     public void setInterestRate(BigDecimal interestRate) {
         if (!isValidInterestRate(interestRate)) {
             throw new IllegalArgumentException(
@@ -156,7 +154,7 @@ public class Savings extends Account {
         BigDecimal interestAmount = getBalance().getAmount().multiply(interestRate);
         return new Money(interestAmount, getBalance().getCurrencyCode());
     }
-
+    // * Aplica el interés anual si corresponde y actualiza la fecha del último interés aplicado
     public boolean applyAnnualInterest() {
         if(!shouldApplyAnnualInterest()) {
             return false; // No ha pasado un año, no se aplica interés
@@ -167,7 +165,7 @@ public class Savings extends Account {
         this.lastInterestDate=LocalDate.now();
         return true;
     }
-    // ==================== MÉTODOS AUXILIARES ====================
+    // ==================== MÉTODOS DE IN ====================
 
     // * Obtiene la próxima fecha en la que se debe aplicar el interés anual
     public LocalDate getNextInterestDate() {

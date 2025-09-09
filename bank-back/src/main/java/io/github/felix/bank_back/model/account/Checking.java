@@ -39,48 +39,9 @@ public class Checking extends Account {
 
     private LocalDate lastMaintenanceFeeDate;// Última fecha en la que se aplicó la cuota de mantenimiento
 
-    /* Metodos privados */
 
 
-    // Comprueba si el balance está por debajo del mínimo
-    public boolean isBelowMinimumBalance() {
-        return getBalance().getAmount().compareTo(minimumBalance.getAmount()) < 0;
-    }
-
-    // Verifica si ha pasado un mes desde la última cuota de mantenimiento
-    public boolean shouldApplyMonthlyMaintenanceFee() {
-        if(lastMaintenanceFeeDate == null) return true; // El primer mes siempre se cobra
-        return lastMaintenanceFeeDate.plusMonths(1).isBefore(LocalDate.now());
-    }
-
-    // Aplica la cuota de mantenimiento mensual si corresponde
-    // (actualiza el balance y la fecha, pero no guarda los cambios en la base de datos)
-    public void applyMonthlyMaintenanceFee() {
-        if (shouldApplyMonthlyMaintenanceFee()) {
-            // Restar la cuota de mantenimiento del balance
-            getBalance().decreaseAmount(monthlyMaintenanceFee);
-            // Actualizar la fecha de la última cuota aplicada
-            lastMaintenanceFeeDate = LocalDate.now();
-        }
-    }
-
-    // Verifica si hay suficiente balance para realizar una operación sin caer por debajo del mínimo
-    public boolean hasEnoughBalance(Money amount) {
-        Money balanceAfterOperation = new Money(
-                getBalance().getAmount().subtract(amount.getAmount()),
-                getBalance().getCurrencyCode()
-        );
-        return balanceAfterOperation.getAmount().compareTo(minimumBalance.getAmount()) >= 0;
-    }
-
-    public boolean hasEnoughBalanceWithFees(Money amount) {
-        Money balanceAfterOperation = new Money(
-                getBalance().getAmount().subtract(amount.getAmount()).subtract(monthlyMaintenanceFee.getAmount()),
-                getBalance().getCurrencyCode()
-        );
-        return balanceAfterOperation.getAmount().compareTo(minimumBalance.getAmount()) >= 0;
-    }
-
+    // ==================== CONSTRUCTORES ====================
 
     // Constructor con propietario principal solamente
     public Checking(Money balance, String secretKey, AccountHolder primaryOwner) {
@@ -107,6 +68,7 @@ public class Checking extends Account {
         initializeDefaults(Currency.getInstance(currencyCode));
     }
 
+    // ==================== MÉTODOS DE INICIALIZACIÓN ====================
     // Metodo para inicializar los valores por defecto en los constructores
     private void initializeDefaults(Currency currency) {
         this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
@@ -114,4 +76,60 @@ public class Checking extends Account {
         this.lastMaintenanceFeeDate = getCreationDate(); // Inicializar con fecha de creación
     }
 
+
+    // =========================== MÉTODOS DEL SYSTEMA ==============================
+
+    // * Comprueba si el balance está por debajo del mínimo
+    public boolean isBelowMinimumBalance() {
+        return getBalance().getAmount().compareTo(minimumBalance.getAmount()) < 0;
+    }
+
+    // * Verifica si ha pasado un mes desde la última cuota de mantenimiento
+    public boolean shouldApplyMonthlyMaintenanceFee() {
+        if(lastMaintenanceFeeDate == null) return true; // El primer mes siempre se cobra
+        return lastMaintenanceFeeDate.plusMonths(1).isBefore(LocalDate.now());
+    }
+
+    // * Aplica la cuota de mantenimiento mensual si corresponde
+    // (actualiza el balance y la fecha, pero no guarda los cambios en la base de datos)
+    public void applyMonthlyMaintenanceFee() {
+        if (shouldApplyMonthlyMaintenanceFee()) {
+            // Restar la cuota de mantenimiento del balance
+            getBalance().decreaseAmount(monthlyMaintenanceFee);
+            // Actualizar la fecha de la última cuota aplicada
+            lastMaintenanceFeeDate = LocalDate.now();
+        }
+    }
+
+    // * Verifica si hay suficiente balance para realizar una operación sin caer por debajo del mínimo
+    public boolean hasEnoughBalance(Money amount) {
+        Money balanceAfterOperation = new Money(
+                getBalance().getAmount().subtract(amount.getAmount()),
+                getBalance().getCurrencyCode()
+        );
+        return balanceAfterOperation.getAmount().compareTo(minimumBalance.getAmount()) >= 0;
+    }
+
+    // ==================== INFORMACIÓN Y UTILIDADES ====================
+
+
+    public String getAccountType() {
+        return "Checking";
+    }
+
+    @Override
+    public String toString() {
+        return "Checking{" +
+                "id=" + getId() +
+                ", balance=" + getBalance() +
+                ", secretKey='" + getSecretKey() + '\'' +
+                ", primaryOwner=" + getPrimaryOwner().getName() +
+                ", secondaryOwner=" + (getSecondaryOwner() != null ? getSecondaryOwner().getName() : "None") +
+                ", creationDate=" + getCreationDate() +
+                ", status=" + getStatus() +
+                ", minimumBalance=" + minimumBalance +
+                ", monthlyMaintenanceFee=" + monthlyMaintenanceFee +
+                ", lastMaintenanceFeeDate=" + lastMaintenanceFeeDate +
+                '}';
+    }
 }

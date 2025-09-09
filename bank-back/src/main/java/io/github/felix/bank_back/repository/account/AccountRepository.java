@@ -20,17 +20,20 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     // * Encuentra todas las cuentas donde el owner coincida ya sea como primary o secondary.
     List<Account> findByPrimaryOwnerIdOrSecondaryOwnerId(Long primaryId, Long secondaryId);
 
+    // * Encuentra todas las cuentas asociadas a un owner específico.
+    List<Account> findByPrimaryOwnerId(Long ownerId);
+
+    // * Encuentra todas las cuentas asociadas a un secondary owner específico.
+    List<Account> findBySecondaryOwnerId(Long ownerId);
+
     // * Encuentra cuentas filtrando por estado (ACTIVE o FROZEN)
     List<Account> findByStatus(String status);
 
     // * Encuentra una cuenta por su secretKey única. -> Util para autenticación.
     Account findBySecretKey(String secretKey);
 
-
-    AccountResponseDTO
-
     /**
-     * Encuentra todas las cuentas cuyo balance sea menor que la cantidad especificada.
+     * Encuentra todas las cuentas cuyo balance sea menor a su Balance minimo.
      * Útil para aplicar PenaltyFee.
      */
     @Query("SELECT a FROM Account a WHERE a.balance.amount < :amount")
