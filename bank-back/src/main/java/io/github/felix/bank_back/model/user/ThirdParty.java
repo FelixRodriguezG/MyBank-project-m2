@@ -1,5 +1,6 @@
 package io.github.felix.bank_back.model.user;
 
+import io.github.felix.bank_back.model.user.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,9 +27,12 @@ public class ThirdParty {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @NotBlank
-    @Column(nullable = false, length = 60)
+    @NotBlank(message = "Hashed key cannot be blank")
+    @Column(nullable = false, unique = true, name = "hashed_key")
     private String hashedKey;
+
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
 
     @Transient
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -51,7 +55,10 @@ public class ThirdParty {
 
     public ThirdParty(String name, String key) {
         this.name = name;
+        this.status = UserStatus.ACTIVE;
         setPassword(key);
     }
+
+
 
 }

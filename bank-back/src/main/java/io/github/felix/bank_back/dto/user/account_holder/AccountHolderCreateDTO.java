@@ -1,4 +1,4 @@
-package io.github.felix.bank_back.dto.user;
+package io.github.felix.bank_back.dto.user.account_holder;
 
 import io.github.felix.bank_back.model.user.embedded.Address;
 import io.github.felix.bank_back.model.user.embedded.PersonalData;

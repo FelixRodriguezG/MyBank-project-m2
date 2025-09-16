@@ -69,7 +69,7 @@ public class AccountHolder  {
     private Address mailingAddress;
 
     public int getAge() {
-        LocalDate birthDate = LocalDate.parse(this.personalData.getDateOfBirth());
+        LocalDate birthDate = this.personalData.getDateOfBirth();
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
