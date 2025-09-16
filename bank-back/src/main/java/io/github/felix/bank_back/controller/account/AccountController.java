@@ -3,7 +3,7 @@ package io.github.felix.bank_back.controller.account;
 import io.github.felix.bank_back.dto.account.AccountResponseDTO;
 import io.github.felix.bank_back.model.account.enums.AccountStatus;
 import io.github.felix.bank_back.model.account.enums.AccountType;
-import io.github.felix.bank_back.service.account.interfaces.AccountService;
+import io.github.felix.bank_back.service.account.account.interfaces.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

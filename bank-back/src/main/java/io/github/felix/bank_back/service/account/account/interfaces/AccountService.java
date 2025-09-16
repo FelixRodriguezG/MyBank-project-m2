@@ -1,4 +1,4 @@
-package io.github.felix.bank_back.service.account.interfaces;
+package io.github.felix.bank_back.service.account.account.interfaces;
 
 import io.github.felix.bank_back.dto.account.AccountResponseDTO;
 import io.github.felix.bank_back.model.account.enums.AccountStatus;

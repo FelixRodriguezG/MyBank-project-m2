@@ -98,7 +98,6 @@ public abstract class Account {
         this.status = AccountStatus.ACTIVE;
         this.penaltyFee = DEFAULT_PENALTY_FEE;
         this.accountType = accountType;
-
     }
 
     public abstract String getAccountTypeInfo();

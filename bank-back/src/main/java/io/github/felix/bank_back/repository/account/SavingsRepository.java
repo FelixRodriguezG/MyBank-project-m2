@@ -1,4 +1,7 @@
 package io.github.felix.bank_back.repository.account;
 
-public interface SavingsRepository {
+import io.github.felix.bank_back.model.account.Savings;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SavingsRepository extends JpaRepository<Savings, Long> {
 }

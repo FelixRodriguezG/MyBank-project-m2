@@ -26,7 +26,13 @@ public class Admin  {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private UserStatus status;
 
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters long")
@@ -36,15 +42,6 @@ public class Admin  {
             @Pattern(regexp = ".*\\d.*", message = "Password must contain at least one digit"),
             @Pattern(regexp = ".*[!@#$%^&*()].*", message = "Password must contain at least one special character (!@#$%^&*())")
     })
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private UserStatus status;
-
     @Column(nullable = false, length = 60)
     private String password;
 

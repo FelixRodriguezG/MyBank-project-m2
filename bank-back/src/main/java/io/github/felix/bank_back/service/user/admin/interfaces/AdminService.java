@@ -1,4 +1,4 @@
-package io.github.felix.bank_back.service.user.interfaces;
+package io.github.felix.bank_back.service.user.admin.interfaces;
 
 import io.github.felix.bank_back.dto.user.Admin.AdminCreateDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminResponseDTO;

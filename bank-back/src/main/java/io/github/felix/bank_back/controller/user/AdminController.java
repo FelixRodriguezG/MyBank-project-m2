@@ -4,7 +4,7 @@ package io.github.felix.bank_back.repository.account;
 import io.github.felix.bank_back.dto.user.Admin.AdminCreateDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminResponseDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminUpdateDTO;
-import io.github.felix.bank_back.service.user.interfaces.AdminService;
+import io.github.felix.bank_back.service.user.admin.interfaces.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

@@ -1,4 +1,4 @@
-package io.github.felix.bank_back.service.account.impl;
+package io.github.felix.bank_back.service.account.account.impl;
 
 import io.github.felix.bank_back.dto.user.account_holder.AccountHolderDTO;
 import io.github.felix.bank_back.dto.account.AccountResponseDTO;
@@ -9,7 +9,7 @@ import io.github.felix.bank_back.model.account.embedded.Money;
 import io.github.felix.bank_back.model.account.enums.AccountStatus;
 import io.github.felix.bank_back.model.account.enums.AccountType;
 import io.github.felix.bank_back.repository.account.AccountRepository;
-import io.github.felix.bank_back.service.account.interfaces.AccountService;
+import io.github.felix.bank_back.service.account.account.interfaces.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
