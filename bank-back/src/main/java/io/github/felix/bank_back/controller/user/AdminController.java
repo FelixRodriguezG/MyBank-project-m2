@@ -1,11 +1,9 @@
-package io.github.felix.bank_back.repository.account;
-
+package io.github.felix.bank_back.controller.user;
 
 import io.github.felix.bank_back.dto.user.Admin.AdminCreateDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminResponseDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminUpdateDTO;
-import io.github.felix.bank_back.service.user.admin.interfaces.AdminService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.github.felix.bank_back.service.user.admin.impl.AdminServiceImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -24,8 +22,11 @@ import java.util.List;
 @Tag(name = "Administradores", description = "Operaciones relacionadas con usuarios administradores")
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminServiceImpl adminService;
+
+    public AdminController(AdminServiceImpl adminService) {
+        this.adminService = adminService;
+    }
 
     @Operation(summary = "Listar todos los administradores", description = "Devuelve la lista de todos los administradores")
     @ApiResponses(value = {

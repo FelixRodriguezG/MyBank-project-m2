@@ -1,16 +1,17 @@
 package io.github.felix.bank_back.service.account.checking.interfaces;
 
+import io.github.felix.bank_back.dto.account.checking.CheckingCreateDTO;
+import io.github.felix.bank_back.dto.account.checking.CheckingResponseDTO;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import io.github.felix.bank_back.model.account.Checking;
 
 public interface CheckingService {
-    List<Checking> findAll();
+    List<CheckingResponseDTO> findAll();
 
-    Optional<Checking> findById(Long id);
+    Optional<CheckingResponseDTO> findById(Long id);
 
-    Checking save(Checking checking);
+    CheckingResponseDTO create(CheckingCreateDTO dto);
 
     void deleteById(Long id);
 
@@ -18,11 +19,11 @@ public interface CheckingService {
 
     void updateBalance(Long accountId, BigDecimal newBalance);
 
-    List<Checking> findByPrimaryOwnerId(Long ownerId);
+    List<CheckingResponseDTO> findByPrimaryOwnerId(Long ownerId);
 
-    List<Checking> findBySecondaryOwnerId(Long ownerId);
+    List<CheckingResponseDTO> findBySecondaryOwnerId(Long ownerId);
 
-    void applyMonthlyMaintenanceFee(Long accountId);
+    CheckingResponseDTO applyMonthlyMaintenanceFee(Long accountId);
 
-    void checkMinimumBalance(Long accountId);
+    CheckingResponseDTO checkMinimumBalance(Long accountId);
 }

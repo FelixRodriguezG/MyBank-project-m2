@@ -15,14 +15,19 @@ import java.util.function.Function;
 public class JwtService {
 
     @Value("${security.jwt.secret}")
-    private String secret; // base64
+    private String secret; // acepta base64 o texto plano
 
     @Value("${security.jwt.expiration-ms}")
     private long expirationMs; // 3600000 (=1 hora)
 
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(secret);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException ex) {
+            // Si no es Base64, usar bytes del string directamente
+            return Keys.hmacShaKeyFor(secret.getBytes());
+        }
     }
 
     public String extractUsername(String token) {

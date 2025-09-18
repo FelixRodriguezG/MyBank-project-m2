@@ -1,17 +1,19 @@
 package io.github.felix.bank_back.service.account.savings.interfaces;
 
+import io.github.felix.bank_back.dto.account.savings.SavingsCreateDTO;
+import io.github.felix.bank_back.dto.account.savings.SavingsResponseDTO;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import io.github.felix.bank_back.model.account.Savings;
 
 
 public interface SavingsService {
-    List<Savings> findAll();
+    List<SavingsResponseDTO> findAll();
 
-    Optional<Savings> findById(Long id);
+    Optional<SavingsResponseDTO> findById(Long id);
 
-    Savings save(Savings savings);
+    SavingsResponseDTO create(SavingsCreateDTO dto);
 
     void deleteById(Long id);
 
@@ -19,11 +21,11 @@ public interface SavingsService {
 
     void updateBalance(Long accountId, BigDecimal newBalance);
 
-    List<Savings> findByPrimaryOwnerId(Long ownerId);
+    List<SavingsResponseDTO> findByPrimaryOwnerId(Long ownerId);
 
-    List<Savings> findBySecondaryOwnerId(Long ownerId);
+    List<SavingsResponseDTO> findBySecondaryOwnerId(Long ownerId);
 
-    void applyInterest(Long accountId);
+    SavingsResponseDTO applyInterest(Long accountId);
 
-    void checkMinimumBalance(Long accountId);
+    SavingsResponseDTO checkMinimumBalance(Long accountId);
 }

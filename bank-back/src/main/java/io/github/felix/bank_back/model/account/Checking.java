@@ -4,7 +4,6 @@ import io.github.felix.bank_back.model.account.embedded.Money;
 import io.github.felix.bank_back.model.account.enums.AccountType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -39,7 +38,6 @@ public class Checking extends Account {
             @AttributeOverride(name = "currencyCode", column = @Column(name = "minimum_balance_currency", length = 3,
                     nullable = false))
     })
-    @Min(250)
     private Money minimumBalance;// Balance mínimo: 250 USD
 
     @Embedded

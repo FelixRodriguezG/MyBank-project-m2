@@ -29,12 +29,52 @@ public class OpenApiConfig {
             .addSecurityItem(new SecurityRequirement().addList("bearer-jwt"));
     }
 
-    // Grupos opcionales (secciones en Swagger UI)
+    // Grupos (secciones en Swagger UI)
     @Bean
     public GroupedOpenApi accountsGroup() {
         return GroupedOpenApi.builder()
                 .group("Accounts")
                 .pathsToMatch("/api/accounts/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi authGroup() {
+        return GroupedOpenApi.builder()
+                .group("Auth")
+                .pathsToMatch("/api/auth/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi holdersGroup() {
+        return GroupedOpenApi.builder()
+                .group("Holders")
+                .pathsToMatch("/api/holder/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi adminsGroup() {
+        return GroupedOpenApi.builder()
+                .group("Admins")
+                .pathsToMatch("/api/admins/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi thirdPartyGroup() {
+        return GroupedOpenApi.builder()
+                .group("Third-Party")
+                .pathsToMatch("/api/third-party/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi transactionsGroup() {
+        return GroupedOpenApi.builder()
+                .group("Transactions")
+                .pathsToMatch("/api/transactions/**")
                 .build();
     }
 }

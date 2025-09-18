@@ -1,207 +1,187 @@
-# Bank Back 🏦
+# Bank Back (API Bancaria)
 
-## 📌 Descripción
-**Bank Back** es un sistema bancario simplificado construido con **Java** y **Spring Boot**.  
-Implementa diferentes tipos de cuentas (`Checking`, `StudentChecking`, `Savings`, `CreditCard`) y roles de usuario (`Admin`, `AccountHolder`, `ThirdParty`), siguiendo las mejores prácticas de **POO con herencia JPA** y una base de datos **MySQL**.  
+Aplicación REST de banca construida con Java 17 y Spring Boot 3.5, que gestiona cuentas (Checking, StudentChecking, Savings, CreditCard), usuarios (Admin, AccountHolder, ThirdParty) y transacciones, con seguridad JWT y MySQL.
 
-El proyecto simula reglas reales del mundo bancario como:
-- Saldos mínimos y penalizaciones.
-- Intereses anuales y mensuales aplicados de forma *lazy* (cuando se consulta el balance).
-- Conversión automática de Checking a StudentChecking para titulares jóvenes.
-- Acceso seguro a cuentas según el tipo de usuario.
-- Transferencias entre cuentas validadas con reglas de negocio.
 
-Este proyecto forma parte del **Ironhack Bootcamp - Proyecto Final del Módulo 2**.
-
----
-
-## 📊 Diagramas
-
-### Diagrama de Clases (UML)
-
-```plaintext
-User (abstract)
- ├─ Admin
- ├─ AccountHolder { dateOfBirth, primaryAddress, mailingAddress? }
- └─ ThirdParty { hashedKey }
-
-Address { street, city, country, zipCode }
-
-Account (abstract) {
-  id, balance: Money, secretKey, status: AccountStatus, createdAt,
-  primaryOwner: AccountHolder, secondaryOwner?, penaltyFee
-}
- ├─ Checking { minimumBalance=250, monthlyMaintenanceFee=12 }
- ├─ StudentChecking { /* no minBalance, no monthlyFee */ }
- ├─ Savings { minimumBalance>=100, interestRate<=0.5, lastInterestAppliedAt }
- └─ CreditCard { creditLimit<=100000, interestRate>=0.1, lastInterestAppliedAt }
-
-Money { amount: BigDecimal, currency: String="EUR" }
-AccountStatus = { ACTIVE, FROZEN }
-```
-
-### Diagrama de Casos de Uso (simplificado)
-
-```plaintext
-Actors:
-  - Admin
-  - AccountHolder
-  - ThirdParty
-
-Use Cases:
-  Admin -> Crear cuentas
-  Admin -> Consultar/modificar saldo
-  Admin -> Crear/gestionar usuarios
-  AccountHolder -> Consultar sus cuentas
-  AccountHolder -> Transferir dinero
-  ThirdParty -> Depositar/retirar fondos
-```
-
----
-
-## ⚙️ Configuración
-
-### Requisitos
-- **Java 17+**
-- **Maven 3.8+**
-- **MySQL 8+**
-- Recomendado: Postman o Insomnia para pruebas de API
-
-### Instalación
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/TU_USUARIO/bank-back.git
-   ```
-2. Configurar la base de datos en `application.properties`:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/bankdb
-   spring.datasource.username=root
-   spring.datasource.password=tu_password
-   spring.jpa.hibernate.ddl-auto=update
-   ```
-3. Ejecutar la aplicación:
-   ```bash
-   mvn spring-boot:run
-   ```
-
----
-
-## 🛠️ Tecnologías Usadas
-- Java 17
-- Spring Boot (Web, Data JPA, Validation, Security [opcional])
-- MySQL
-- JUnit & Spring Boot Test
-- Maven
+## Tecnologías y dependencias
+- Java 17, Maven
+- Spring Boot 3.5.5
+  - spring-boot-starter-web (REST)
+  - spring-boot-starter-data-jpa (JPA/Hibernate)
+  - spring-boot-starter-validation (Jakarta Validation)
+  - spring-boot-starter-security (Security)
+- JWT: io.jsonwebtoken:jjwt-*(0.11.5)
+- MySQL: mysql-connector-j
+- OpenAPI/Swagger: springdoc-openapi-starter-webmvc-ui (2.3.0)
 - Lombok
 
----
 
-## 🌐 Controladores y Rutas
+## Modelo y base de datos
+- Herencia JPA "table-per-subclass":
+  - Tabla base: account (campos comunes)
+  - Subclases: checking, savings, credit_card, student_checking (1:1 por id)
+- Entidades usuario: account_holders, admins, third_parties
+- Transacciones: transactions
+- Value objects embebidos: Money (amount + currency), Address, PersonalData
 
-### Admin (`/api/admin`)
-- `POST /holders` → Crear nuevo titular de cuenta  
-- `GET /holders` → Listar todos los titulares  
-- `GET /holders/{id}` → Consultar titular por id  
-- `POST /users/third-party` → Crear nuevo usuario third-party  
-- `GET /users/third-party/{id}` → Consultar third-party por id  
-- `DELETE /users/third-party/{id}` → Eliminar third-party  
+Diagrama lógico simplificado en bank-back/BankUML.png.
 
-#### Cuentas
-- `POST /accounts` → Crear nueva cuenta (Checking, Savings o CreditCard)  
-- `GET /accounts` → Listar todas las cuentas  
-- `GET /accounts/{id}` → Consultar cuenta por id  
-- `PATCH /accounts/{id}/balance` → Modificar saldo de una cuenta  
-- `PATCH /accounts/{id}/status` → Cambiar estado (ACTIVE/FROZEN)  
-- `DELETE /accounts/{id}` → Eliminar cuenta  
 
----
+## Reglas de negocio (resumen)
+- Checking: mínimo 250, mantenimiento mensual 12, penaltyFee 40 si baja del mínimo.
+- StudentChecking: sin mínimo ni mantenimiento (para titulares <24 años).
+- Savings: mínimo configurable (≥100, por defecto 1000), interés anual (por defecto 0.0025, máx 0.5).
+- CreditCard: límite crédito (100–100000, por defecto 100), interés mensual (≥0.1, por defecto 0.2).
+- PenaltyFee para todas: 40.
 
-### AccountHolder (`/api/holder`)
-- `GET /accounts` → Listar mis cuentas (aplica intereses automáticamente)  
-- `GET /accounts/{id}` → Consultar una de mis cuentas  
-- `POST /transfers` → Transferir dinero entre cuentas  
 
-**Body ejemplo transferencia:**
+## Seguridad y autenticación
+- JWT stateless con Authorization: Bearer <token>
+- Login: POST /api/auth/login
+  - Body: { "username": "...", "password": "..." }
+  - Respuesta: { token, expiresIn }
+- Resolución de usuarios para login:
+  - Admin: busca por username (tabla admins)
+  - AccountHolder: usa name como username (tabla account_holders)
+- Rutas públicas: /api/auth/**, /swagger-ui/**, /v3/api-docs/**
+
+
+## Configuración y ejecución
+1) MySQL local (DB se crea si no existe):
+   - src/main/resources/application.properties
+     - spring.datasource.url=jdbc:mysql://localhost:3306/bank-back?createDatabaseIfNotExist=true
+     - spring.datasource.username=<tu_user>
+     - spring.datasource.password=<tu_pass>
+     - spring.jpa.hibernate.ddl-auto=update
+     - security.jwt.secret=<cadena_larga_random>
+2) Ejecutar:
+   - Windows: `mvnw.cmd -DskipTests spring-boot:run`
+   - Linux/Mac: `./mvnw -DskipTests spring-boot:run`
+3) Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+
+## Datos de ejemplo (DataLoader)
+Se insertan al arrancar si la BD está vacía:
+- 4 AccountHolders (ACTIVEs):
+  - "Alice Smith" (pwd: alice1234)
+  - "Bob Johnson" (pwd: bob1234)
+  - "Carol Young" (pwd: carol1234)
+  - "Dave Student" (pwd: dave1234)
+- 1 ThirdParty: name "AcmePayments", hashedKey = bcrypt("tp-secret")
+  - IMPORTANTE: los endpoints de terceros esperan el valor hashedKey tal cual está en BD (no el texto plano)
+- 8 cuentas: 2 por tipo (Checking, Savings, CreditCard, StudentChecking)
+
+Consejo: si quieres un Admin al instante, puedes (a) activar el perfil "inmemory" para un admin in-memory (admin/123456), o (b) crear un admin con POST /api/admins (ver más abajo) y luego usar su username/password para login.
+
+
+## Endpoints principales y ejemplos
+A menos que se indique, todos requieren JWT en Authorization.
+
+### 1) Autenticación
+- POST /api/auth/login
+```bash
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"Alice Smith","password":"alice1234"}'
+```
+Respuesta:
 ```json
-{
-  "fromAccountId": 1,
-  "toAccountId": 2,
-  "amount": "150.00",
-  "targetOwnerName": "Alice Doe"
-}
+{ "token": "<JWT>", "expiresIn": 3600 }
 ```
 
----
-
-### ThirdParty (`/api/third-party`)
-Requiere cabecera:  
+### 2) AccountHolder (/api/holder)
+- GET /api/holder/accounts
+```bash
+curl -H "Authorization: Bearer <JWT>" http://localhost:8080/api/holder/accounts
 ```
-X-Hashed-Key: <hash>
+- GET /api/holder/accounts/{id}
+```bash
+curl -H "Authorization: Bearer <JWT>" http://localhost:8080/api/holder/accounts/1
+```
+- POST /api/holder/transfers
+Body (TransferDTO): { senderId, receiverId, amount, secretKey }
+```bash
+curl -X POST http://localhost:8080/api/holder/transfers \
+  -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" \
+  -d '{"senderId":1,"receiverId":2,"amount":100.0,"secretKey":"2345"}'
+```
+Errores habituales: 403 (no eres dueño), 404 (cuenta no existe), 422 (fondos insuficientes).
+
+### 3) Admin de usuarios (/api/admins)
+- POST /api/admins (crear admin)
+```bash
+curl -X POST http://localhost:8080/api/admins \
+  -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" \
+  -d '{"name":"Root","username":"root","password":"root123"}'
+```
+- GET /api/admins, GET /api/admins/{id}, PUT /api/admins/{id}, DELETE /api/admins/{id}
+
+### 4) Administración de cuentas (/api/accounts)
+(restringido a ROLE_ADMIN)
+- GET /api/accounts/me (rol AccountHolder): ver mis cuentas (azúcar sobre /api/holder/accounts)
+- GET /api/accounts/owner?primaryOwnerId=1&secondaryOwnerId=2
+- GET /api/accounts/primary-owner/{id}
+- GET /api/accounts/secondary-owner/{id}
+- GET /api/accounts/status/{status}  (ACTIVE|FROZEN)
+- GET /api/accounts/type/{type}      (CHECKING|SAVINGS|CREDIT_CARD|STUDENT)
+- POST /api/accounts/penalty/low-balance
+- POST /api/accounts/penalty/student-negative
+- POST /api/accounts/maintenance/checking
+- POST /api/accounts/interest/savings
+- POST /api/accounts/interest/credit-card
+- DELETE /api/accounts/{id}
+
+Ejemplo (como ADMIN):
+```bash
+# Login admin (si usas el creado arriba)
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"root","password":"root123"}'
+
+# Aplicar mantenimiento a checking
+curl -X POST http://localhost:8080/api/accounts/maintenance/checking \
+  -H "Authorization: Bearer <JWT_ADMIN>"
 ```
 
-- `POST /transactions/deposit` → Depositar dinero en cuenta  
-  ```json
-  { "accountId": 2, "secretKey": "ABCD-1234", "amount": "120.00" }
-  ```
-- `POST /transactions/withdraw` → Retirar dinero de cuenta  
-  ```json
-  { "accountId": 2, "secretKey": "ABCD-1234", "amount": "50.00" }
-  ```
-
----
-
-## 🧪 Tests
-- **Unit Tests**:  
-  - Aplicación de `penaltyFee` al bajar del saldo mínimo.  
-  - Aplicación de intereses anuales en `Savings`.  
-  - Aplicación de intereses mensuales en `CreditCard`.  
-  - Creación de `StudentChecking` si owner < 24.  
-
-- **Integration Tests**:  
-  - Flujo de transferencia válido (con validación de nombres y balances).  
-  - Acceso restringido a cuentas (solo dueños).  
-  - Endpoints de creación y consulta de cuentas/usuarios.  
-
----
-
-## 🚨 Manejo de Errores
-Respuestas estandarizadas en JSON:
-
-```json
-{
-  "error": "INSUFFICIENT_FUNDS",
-  "message": "Not enough balance in account",
-  "path": "/api/holder/transfers",
-  "timestamp": "2025-09-05T12:30:00"
-}
+### 5) ThirdParty (/api/third-party)
+Cabecera obligatoria: X-Hashed-Key: <valor almacenado en BD>
+- POST /api/third-party/transactions/deposit
+```bash
+curl -X POST http://localhost:8080/api/third-party/transactions/deposit \
+  -H "X-Hashed-Key: <HASH_BCRYPT_EN_BD>" -H "Content-Type: application/json" \
+  -d '{"accountId":1,"secretKey":"1234","amount":"50.00"}'
 ```
+- POST /api/third-party/transactions/withdraw
+```bash
+curl -X POST http://localhost:8080/api/third-party/transactions/withdraw \
+  -H "X-Hashed-Key: <HASH_BCRYPT_EN_BD>" -H "Content-Type: application/json" \
+  -d '{"accountId":1,"secretKey":"1234","amount":"20.00"}'
+```
+Nota: el valor esperado es el hashedKey exacto (bcrypt) guardado; consúltalo en la tabla third_parties.
 
-- `404 Not Found` → Recurso inexistente  
-- `403 Forbidden` → Acceso denegado  
-- `409 Conflict` → Operación inválida por estado  
-- `422 Unprocessable Entity` → Violación de regla de negocio  
+### 6) Transacciones (/api/transactions)
+- GET /api/transactions?start=2025-01-01T00:00:00&end=2025-12-31T23:59:59
+- GET /api/transactions/count?accountId=1&start=2025-01-01T00:00:00&end=2025-12-31T23:59:59
 
----
 
-## 🚀 Trabajo Futuro
-- Sistema de detección de fraude (congelar cuenta en actividad sospechosa).  
-- Despliegue en Heroku / Render / Railway.  
-- Notificaciones en tiempo real e historial de transacciones.  
-- Autenticación y autorización basada en roles con Spring Security & JWT.  
+## Errores y estados
+- 400 Bad Request: datos inválidos
+- 401 Unauthorized: falta o token inválido
+- 403 Forbidden: sin permisos o fallo de validación (secretKey/propietario)
+- 404 Not Found: recurso inexistente
+- 422 Unprocessable Entity: regla de negocio (fondos insuficientes, etc.)
 
----
 
-## 📚 Recursos
-- [Documentación de Spring Boot](https://spring.io/projects/spring-boot)  
-- [Guía de Spring Data JPA](https://spring.io/guides/gs/accessing-data-jpa/)  
-- [Documentación de MySQL](https://dev.mysql.com/doc/)  
+## Desarrollo y pruebas
+- Compilar: `mvn -DskipTests package`
+- Ejecutar tests: `mvn test`
+- Ejecutar en caliente: `mvn spring-boot:run`
 
----
 
-## 📋 Gestión del Proyecto
-- [Trello Board](https://trello.com/) *(enlace al tablero del proyecto)*
+## Notas operativas
+- Si vienes de un esquema previo y aparece un CHECK inconsistente (p. ej. en checking), elimina el constraint antiguo o recrea la BD. Con `spring.jpa.hibernate.ddl-auto=update` no se borran constraints heredados.
+- Swagger UI está habilitado; usa los ejemplos como base y ajusta según tu dataset.
 
----
 
-## 👥 Equipo
-- **Tu Nombre** (Desarrollador)  
+## Licencia
+MIT (ver LICENSE)

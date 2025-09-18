@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.Optional;
 import java.time.LocalDate;
 
 import io.github.felix.bank_back.model.user.enums.UserStatus;
@@ -12,6 +13,9 @@ import io.github.felix.bank_back.model.user.enums.UserStatus;
 public interface AccountHolderRepository extends JpaRepository<AccountHolder, Long> {
     // Busca titulares por nombre (ignora mayúsculas/minúsculas) y apellido (ignorando mayúsculas/minúsculas)
     List<AccountHolder> findByNameIgnoreCaseAndId(String name, Long id);
+
+    // Login: buscar por nombre exacto
+    Optional<AccountHolder> findByName(String name);
 
     // Busca titulares por nombre (ignorando mayúsculas/minúsculas)
     List<AccountHolder> findByPersonalData_FirstNameIgnoreCase(String firstName);

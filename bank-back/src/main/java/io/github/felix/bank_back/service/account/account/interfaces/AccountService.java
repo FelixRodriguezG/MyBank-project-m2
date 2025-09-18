@@ -1,6 +1,7 @@
 package io.github.felix.bank_back.service.account.account.interfaces;
 
 import io.github.felix.bank_back.dto.account.AccountResponseDTO;
+import io.github.felix.bank_back.dto.account.TransferDTO;
 import io.github.felix.bank_back.model.account.enums.AccountStatus;
 import io.github.felix.bank_back.model.account.enums.AccountType;
 
@@ -29,5 +30,12 @@ public interface AccountService {
     List<AccountResponseDTO> getCreditCardAccountsWithInterestDue();
 
     boolean deleteAccountById(Long accountId);
+
+    // --- Operaciones para titulares de cuenta ---
+    List<AccountResponseDTO> getMyAccounts(String username);
+
+    AccountResponseDTO getMyAccountForUser(Long accountId, String username);
+
+    AccountResponseDTO transfer(TransferDTO dto, String username);
 
 }

@@ -24,7 +24,6 @@ public class PersonalData {
     private String lastName;
 
     @NotNull
-    @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "La fecha debe tener el formato yyyy-MM-dd")
     @Past(message = "La fecha de nacimiento debe ser en el pasado")
     @Column(nullable = false)
     private LocalDate dateOfBirth;

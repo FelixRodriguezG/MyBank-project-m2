@@ -36,12 +36,10 @@ public class Admin  {
 
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters long")
-    @Pattern.List({
-            @Pattern(regexp = ".*[A-Z].*", message = "Password must contain at least one uppercase letter"),
-            @Pattern(regexp = ".*[a-z].*", message = "Password must contain at least one lowercase letter"),
-            @Pattern(regexp = ".*\\d.*", message = "Password must contain at least one digit"),
-            @Pattern(regexp = ".*[!@#$%^&*()].*", message = "Password must contain at least one special character (!@#$%^&*())")
-    })
+    @Pattern(
+            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()]).+$",
+            message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (!@#$%^&*())"
+    )
     @Column(nullable = false, length = 60)
     private String password;
 
