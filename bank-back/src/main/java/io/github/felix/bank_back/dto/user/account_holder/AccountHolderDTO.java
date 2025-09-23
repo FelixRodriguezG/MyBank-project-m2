@@ -45,6 +45,9 @@ public class AccountHolderDTO {
     private LocalDateTime createdAt;
 
     public static AccountHolderDTO fromEntity(AccountHolder owner) {
+        if (owner == null) {
+            throw new IllegalArgumentException("El propietario de la cuenta no puede ser null");
+        }
         return new AccountHolderDTO(
                 owner.getId(),
                 owner.getName(),

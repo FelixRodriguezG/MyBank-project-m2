@@ -3,7 +3,7 @@
 Aplicación REST de banca construida con Java 17 y Spring Boot 3.5, que gestiona cuentas (Checking, StudentChecking, Savings, CreditCard), usuarios (Admin, AccountHolder, ThirdParty) y transacciones, con seguridad JWT y MySQL.
 
 
-## Tecnologías y dependencias
+## Tecnolog��as y dependencias
 - Java 17, Maven
 - Spring Boot 3.5.5
   - spring-boot-starter-web (REST)
@@ -14,6 +14,14 @@ Aplicación REST de banca construida con Java 17 y Spring Boot 3.5, que gestiona
 - MySQL: mysql-connector-j
 - OpenAPI/Swagger: springdoc-openapi-starter-webmvc-ui (2.3.0)
 - Lombok
+
+
+## Arquitectura (alto nivel)
+- controller: controladores REST por dominio (accounts, holder, admins, third-party, transactions)
+- service: lógica de negocio por agregado (cuentas por tipo, usuarios, transacciones)
+- repository: acceso JPA a entidades
+- model: entidades JPA (accounts, users, transactions) y value objects (Money, Address)
+- security: JWT, filtros y user-details
 
 
 ## Modelo y base de datos
@@ -33,6 +41,20 @@ Diagrama lógico simplificado en bank-back/BankUML.png.
 - Savings: mínimo configurable (≥100, por defecto 1000), interés anual (por defecto 0.0025, máx 0.5).
 - CreditCard: límite crédito (100–100000, por defecto 100), interés mensual (≥0.1, por defecto 0.2).
 - PenaltyFee para todas: 40.
+
+
+## Transacciones unificadas
+Toda operación que modifica el saldo registra automáticamente una entidad Transaction.
+Tipos soportados (TransactionType):
+- DEPOSIT y WITHDRAWAL: ajustes de saldo, depósitos/retiros de terceros y actualizaciones directas de balance.
+- TRANSFER: transferencias entre cuentas (cuenta origen y destino registradas).
+- INTEREST_PAYMENT: intereses aplicados (Savings anual, CreditCard mensual).
+- MAINTENANCE_FEE: cuota de mantenimiento mensual (Checking) cuando corresponde.
+- PENALTY_FEE: penalización por saldo bajo o negativo según reglas.
+
+Notas:
+- Los endpoints de terceros usan DEPOSIT/WITHDRAWAL (no THIRD_PARTY_*).
+- Los métodos de servicio updateBalance(...) en cada tipo de cuenta también generan Transaction (uso interno; no expuestos por API).
 
 
 ## Seguridad y autenticación
@@ -75,7 +97,7 @@ Consejo: si quieres un Admin al instante, puedes (a) activar el perfil "inmemory
 
 
 ## Endpoints principales y ejemplos
-A menos que se indique, todos requieren JWT en Authorization.
+A menos que se indique, todos requieren JWT en Authorization. Cada operación que modifica saldo registra una Transaction automáticamente.
 
 ### 1) Autenticación
 - POST /api/auth/login
@@ -124,11 +146,11 @@ curl -X POST http://localhost:8080/api/admins \
 - GET /api/accounts/secondary-owner/{id}
 - GET /api/accounts/status/{status}  (ACTIVE|FROZEN)
 - GET /api/accounts/type/{type}      (CHECKING|SAVINGS|CREDIT_CARD|STUDENT)
-- POST /api/accounts/penalty/low-balance
-- POST /api/accounts/penalty/student-negative
-- POST /api/accounts/maintenance/checking
-- POST /api/accounts/interest/savings
-- POST /api/accounts/interest/credit-card
+- POST /api/accounts/penalty/low-balance   → Transaction PENALTY_FEE para Checking/Savings bajo mínimo
+- POST /api/accounts/penalty/student-negative → Transaction PENALTY_FEE en Student con saldo negativo
+- POST /api/accounts/maintenance/checking  → Transaction MAINTENANCE_FEE si corresponde
+- POST /api/accounts/interest/savings      → Transaction INTEREST_PAYMENT
+- POST /api/accounts/interest/credit-card  → Transaction INTEREST_PAYMENT
 - DELETE /api/accounts/{id}
 
 Ejemplo (como ADMIN):
@@ -145,13 +167,13 @@ curl -X POST http://localhost:8080/api/accounts/maintenance/checking \
 
 ### 5) ThirdParty (/api/third-party)
 Cabecera obligatoria: X-Hashed-Key: <valor almacenado en BD>
-- POST /api/third-party/transactions/deposit
+- POST /api/third-party/transactions/deposit   → Transaction DEPOSIT
 ```bash
 curl -X POST http://localhost:8080/api/third-party/transactions/deposit \
   -H "X-Hashed-Key: <HASH_BCRYPT_EN_BD>" -H "Content-Type: application/json" \
   -d '{"accountId":1,"secretKey":"1234","amount":"50.00"}'
 ```
-- POST /api/third-party/transactions/withdraw
+- POST /api/third-party/transactions/withdraw  → Transaction WITHDRAWAL
 ```bash
 curl -X POST http://localhost:8080/api/third-party/transactions/withdraw \
   -H "X-Hashed-Key: <HASH_BCRYPT_EN_BD>" -H "Content-Type: application/json" \

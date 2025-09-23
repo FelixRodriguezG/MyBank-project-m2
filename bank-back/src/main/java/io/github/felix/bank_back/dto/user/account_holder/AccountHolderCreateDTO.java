@@ -16,8 +16,8 @@ public class AccountHolderCreateDTO {
     @NotBlank
     private String name;
 
-    @NotNull
-    private LocalDate dateOfBirth;
+    @NotBlank
+    private String password;
 
     @NotNull
     private PersonalData personalData;

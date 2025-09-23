@@ -5,8 +5,11 @@ import io.github.felix.bank_back.dto.account.credit_card.CreditCardResponseDTO;
 import io.github.felix.bank_back.dto.user.account_holder.AccountHolderDTO;
 import io.github.felix.bank_back.model.account.CreditCard;
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.transaction.Transaction;
+import io.github.felix.bank_back.model.transaction.enums.TransactionType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import io.github.felix.bank_back.repository.account.CreditCardRepository;
+import io.github.felix.bank_back.repository.transaction.TransactionRepository;
 import io.github.felix.bank_back.repository.user.AccountHolderRepository;
 import io.github.felix.bank_back.service.account.credit_card.interfaces.CreditCardService;
 import org.springframework.stereotype.Service;
@@ -21,11 +24,14 @@ public class CreditCardServiceImpl implements CreditCardService {
 
     private final CreditCardRepository creditCardRepository;
     private final AccountHolderRepository accountHolderRepository;
+    private final TransactionRepository transactionRepository;
 
     public CreditCardServiceImpl(CreditCardRepository creditCardRepository,
-                                 AccountHolderRepository accountHolderRepository) {
+                                 AccountHolderRepository accountHolderRepository,
+                                 TransactionRepository transactionRepository) {
         this.creditCardRepository = creditCardRepository;
         this.accountHolderRepository = accountHolderRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -81,8 +87,16 @@ public class CreditCardServiceImpl implements CreditCardService {
         CreditCard cc = creditCardRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("CreditCard no encontrada"));
         Currency currency = cc.getBalance().getCurrencyCode();
+        BigDecimal old = cc.getBalance().getAmount();
         cc.setBalance(new Money(newBalance, currency));
         creditCardRepository.save(cc);
+        // Registrar transacción por ajuste de balance (depósito o retiro)
+        BigDecimal diff = newBalance.subtract(old);
+        if (diff.compareTo(BigDecimal.ZERO) > 0) {
+            transactionRepository.save(new Transaction(new Money(diff, currency), TransactionType.DEPOSIT, cc, "Balance update"));
+        } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
+            transactionRepository.save(new Transaction(new Money(diff.abs(), currency), TransactionType.WITHDRAWAL, cc, "Balance update"));
+        }
     }
 
     @Override
@@ -99,8 +113,14 @@ public class CreditCardServiceImpl implements CreditCardService {
     public CreditCardResponseDTO applyInterest(Long accountId) {
         CreditCard cc = creditCardRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("CreditCard no encontrada"));
+        // Calcular interés a registrar
+        Money interest = cc.calculateMonthlyInterest();
         if (cc.applyMonthlyInterest()) {
             cc = creditCardRepository.save(cc);
+            if (interest.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                transactionRepository.save(new Transaction(new Money(interest.getAmount(), interest.getCurrencyCode()),
+                        TransactionType.INTEREST_PAYMENT, cc, "Credit card monthly interest"));
+            }
         }
         return toDTO(cc);
     }

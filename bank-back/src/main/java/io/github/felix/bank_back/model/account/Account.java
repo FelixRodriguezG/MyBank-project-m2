@@ -77,27 +77,31 @@ public abstract class Account {
     // ***************   CONSTRUCTORES ****************
     // Constructor para un propietario principal
     public Account( Money balance, String secretKey, AccountHolder primaryOwner, AccountType accountType) {
+        if (primaryOwner == null) {
+            throw new IllegalArgumentException("El propietario principal de la cuenta no puede ser null");
+        }
         this.balance = balance;
         this.secretKey = secretKey;
         this.primaryOwner = primaryOwner;
-        this.creationDate = LocalDate.now();
+        this.accountType = accountType;
+        this.creationDate = java.time.LocalDate.now();
         this.status = AccountStatus.ACTIVE;
         this.penaltyFee = DEFAULT_PENALTY_FEE;
-        this.accountType = accountType;
-
     }
 
     // Constructor para cuenta con dos propietarios
-    public Account(Money balance, String secretKey, AccountHolder primaryOwner,
-                    AccountHolder secondaryOwner, AccountType accountType) {
+    public Account(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner, AccountType accountType) {
+        if (primaryOwner == null) {
+            throw new IllegalArgumentException("El propietario principal de la cuenta no puede ser null");
+        }
         this.balance = balance;
         this.secretKey = secretKey;
         this.primaryOwner = primaryOwner;
         this.secondaryOwner = secondaryOwner;
-        this.creationDate = LocalDate.now();
+        this.accountType = accountType;
+        this.creationDate = java.time.LocalDate.now();
         this.status = AccountStatus.ACTIVE;
         this.penaltyFee = DEFAULT_PENALTY_FEE;
-        this.accountType = accountType;
     }
 
     public abstract String getAccountTypeInfo();

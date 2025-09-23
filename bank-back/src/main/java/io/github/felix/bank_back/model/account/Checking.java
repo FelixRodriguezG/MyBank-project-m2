@@ -57,15 +57,20 @@ public class Checking extends Account {
 
     // ==================== CONSTRUCTORES ====================
 
+    private static AccountHolder requireOwner(AccountHolder owner) {
+        if (owner == null) throw new IllegalArgumentException("El propietario principal de la cuenta no puede ser null");
+        return owner;
+    }
+
     // Constructor con propietario principal solamente(currency por defecto USD)
     public Checking(Money balance, String secretKey, AccountHolder primaryOwner) {
-        super(balance, secretKey, primaryOwner, AccountType.CHECKING);
+        super(balance, secretKey, requireOwner(primaryOwner), AccountType.CHECKING);
         initializeDefaults(balance.getCurrencyCode());
     }
 
     // Constructor con propietario principal y secundario(currency por defecto USD)
     public Checking(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.CHECKING);
+        super(balance, secretKey, requireOwner(primaryOwner), secondaryOwner, AccountType.CHECKING);
         initializeDefaults(balance.getCurrencyCode());
     }
 

@@ -1,133 +1,97 @@
-# Bank Back  
-M2 - Semana 6 - 1 al 5 de septiembre  
+## Detección de fraude (bonus)
+- Congelar cuenta si:  
+  - Transacciones en 24h > 150% del mayor total diario registrado  
+  - Más de 2 transacciones en < 1 segundo
+---
 
-**Día 5 - Proyecto Práctico Módulo 2**  
-
-## Resumen del proyecto
-
-En este proyecto construirás un **sistema bancario**. Debes cumplir con todos los siguientes requisitos:  
+## Tipos de cuentas (4)
+## Requisitos técnicos
+- Backend en Java/Spring Boot  
+- Persistencia en MySQL  
+- Rutas GET, POST, PUT/PATCH y DELETE  
+- Autenticación con Spring Security (JWT)  
+Atributos clave: balance, secretKey, primaryOwner, secondaryOwner (opcional), minimumBalance, penaltyFee, monthlyMaintenanceFee, creationDate, status (FROZEN|ACTIVE).  
+Reglas: mínimo 250; mantenimiento mensual 12; penalización 40 si cae por debajo del mínimo.
+- Money (BigDecimal + Currency) para cálculos monetarios
+### StudentChecking (Cuenta corriente estudiantil)
+Igual que Checking pero sin minimumBalance ni monthlyMaintenanceFee.  
+Usada automáticamente para titulares < 24 años.
+## Entregables
+Igual que Checking pero sin mantenimiento mensual y con interés anual.  
+- interestRate por defecto: 0.0025; máximo: 0.5  
+- minimumBalance por defecto: 1000; mínimo configurable: 100
+- Documentación completa en README.md
+Atributos: balance, owners, creditLimit, interestRate, penaltyFee.  
+- creditLimit por defecto: 100; máximo configurable: 100000  
+- interestRate por defecto: 0.2; mínimo configurable: 0.1  
+- Interés aplicado mensualmente sobre saldos negativos (deuda)
 
 ---
 
-## Requisitos  
+## Usuarios (3)
+- Admins  
+- AccountHolders  
+- ThirdParty  
 
-El sistema debe tener **4 tipos de cuentas**:  
-- StudentChecking  
-- Checking  
-- Savings  
-- CreditCard  
+### AccountHolders (Titulares)
+Acceden con JWT (no Basic Auth).  
+Pueden ver sus cuentas y transferir entre cuentas si hay fondos suficientes.
 
-### Checking (Cuenta corriente)  
-Las cuentas corrientes deben tener:  
-- Balance  
-- `secretKey`  
-- Propietario principal (PrimaryOwner)  
-- Propietario secundario opcional (SecondaryOwner)  
-- Saldo mínimo (minimumBalance)  
-- Comisión por penalización (penaltyFee)  
-- Comisión mensual de mantenimiento (monthlyMaintenanceFee)  
-- Fecha de creación (creationDate)  
-- Estado (FROZEN, ACTIVE)  
+### Admins
+Administran usuarios y cuentas; pueden listar/crear/borrar administradores, crear titulares y terceros, y ejecutar procesos de mantenimiento/intereses/penalizaciones.
 
-### StudentChecking (Cuenta corriente estudiantil)  
-Son idénticas a las cuentas corrientes excepto que **NO tienen**:  
-- Comisión mensual de mantenimiento  
-- Saldo mínimo  
-
-### Savings (Cuenta de ahorros)  
-Son idénticas a las cuentas corrientes excepto que:  
-- **NO** tienen comisión mensual de mantenimiento  
-- **Sí** tienen interés (`interestRate`)  
-
-### CreditCard (Tarjeta de crédito)  
-Las tarjetas de crédito deben tener:  
-- Balance  
-- Propietario principal (PrimaryOwner)  
-- Propietario secundario opcional (SecondaryOwner)  
-- Límite de crédito (`creditLimit`)  
-- Interés (`interestRate`)  
-- Comisión por penalización (`penaltyFee`)  
+### ThirdParty (Terceros)
+Cuentan con hashedKey y nombre.  
+Operan depósitos/retiros sobre cuentas válidas indicando cabecera X-Hashed-Key y la secretKey de la cuenta.
 
 ---
 
-## Usuarios  
+## Transacciones unificadas
+Toda operación que modifica el saldo crea una entidad Transaction.
 
-El sistema debe tener **3 tipos de usuarios**:  
-- **Admins**  
-- **AccountHolders**  
-- **ThirdParty**  
+Tipos (TransactionType):
+- DEPOSIT: depósitos de terceros y aumentos de saldo  
+- WITHDRAWAL: retiros de terceros y disminuciones de saldo  
+- TRANSFER: transferencias entre cuentas (origen y destino)  
+- INTEREST_PAYMENT: intereses (Savings anual, CreditCard mensual)  
+- MAINTENANCE_FEE: mantenimiento mensual (Checking, cuando corresponde)  
+- PENALTY_FEE: penalización por bajo/negativo saldo según reglas  
 
-### AccountHolders (Titulares de cuentas)  
-Deben poder acceder **solo a sus cuentas** usando credenciales correctas con **Basic Auth**.  
-Tienen:  
-- Nombre  
-- Fecha de nacimiento  
-- Dirección principal (`primaryAddress`, clase aparte)  
-- Dirección postal opcional (`mailingAddress`)  
-
-### Admins  
-- Solo tienen nombre.  
-
-### ThirdParty (Terceros)  
-- Tienen un `hashedKey` y un nombre.  
-- Deben ser añadidos por un Admin.  
+Notas:
+- Los métodos internos updateBalance(...) en servicios de cuenta también registran Transaction (uso interno, no expuestos por API).  
+- Se eliminan los tipos THIRD_PARTY_* en favor de DEPOSIT/WITHDRAWAL.
 
 ---
 
-## Creación de cuentas  
-
-- **Admins** pueden crear nuevas cuentas: Checking, Savings o CreditCard.  
-
-### Savings  
-- Interés por defecto: **0.0025**  
-- Máximo interés configurable: **0.5**  
-- Saldo mínimo por defecto: **1000**  
-- Mínimo configurable: **100**  
-
-### CreditCards  
-- Límite de crédito por defecto: **100**  
-- Máximo configurable: **100000**  
-- Interés por defecto: **0.2**  
-- Mínimo configurable: **0.1**  
-
-### CheckingAccounts  
-- Si el propietario es menor de 24 años → **StudentChecking**  
-- Si no → **Checking**  
-- Saldo mínimo: **250**  
-- Comisión mensual: **12**  
+## Acceso y autenticación
+- JWT stateless: Authorization: Bearer <token>  
+- Login: POST /api/auth/login, body { username, password }  
+- Rutas públicas: /api/auth/**, /swagger-ui/**, /v3/api-docs/**
 
 ---
 
-## Intereses y comisiones  
-
-### PenaltyFee  
-- Todas las cuentas: **40**  
-- Si el balance baja del mínimo → se descuenta automáticamente  
-
-### InterestRate  
-- **Savings**: interés anual  
-- **CreditCards**: interés mensual  
-
----
-
-## Acceso a cuentas  
-
-- **Admins**:  
-  - Ver y modificar cualquier balance  
-
-- **AccountHolders**:  
-  - Ver su balance  
-  - Transferir dinero entre cuentas (si hay fondos suficientes)  
-  - Deben indicar: nombre del propietario (Primary o Secondary) + id de la cuenta destino  
-
-- **Third-Party Users**:  
-  - Pueden enviar/recibir dinero  
-  - Deben estar en la base de datos  
-  - Deben incluir en la cabecera: `hashedKey`, cantidad, id de cuenta y `secretKey`  
+## Capacidades por rol (resumen de endpoints)
+- AccountHolder (/api/holder):
+  - GET /accounts (mis cuentas)  
+  - GET /accounts/{id} (si es propio)  
+  - POST /transfers (TransferDTO con senderId, receiverId, amount, secretKey)
+- Admin (/api/accounts, /api/admins):
+  - Gestión de admins: CRUD  
+  - Gestión operativa de cuentas:
+    - POST /api/accounts/penalty/low-balance → PENALTY_FEE en Checking/Savings bajo mínimo  
+    - POST /api/accounts/penalty/student-negative → PENALTY_FEE en Student con saldo negativo  
+    - POST /api/accounts/maintenance/checking → MAINTENANCE_FEE si corresponde  
+    - POST /api/accounts/interest/savings → INTEREST_PAYMENT  
+    - POST /api/accounts/interest/credit-card → INTEREST_PAYMENT  
+- ThirdParty (/api/third-party):
+  - POST /transactions/deposit (X-Hashed-Key, body con accountId, amount, secretKey) → DEPOSIT  
+  - POST /transactions/withdraw (X-Hashed-Key, body con accountId, amount, secretKey) → WITHDRAWAL
+- Transacciones (/api/transactions):
+  - GET listado por rango de fechas  
+  - GET conteo por cuenta y rango
 
 ---
 
-## Funcionalidades extra (bonus)  
 
 ### Detección de fraude  
 El sistema debe congelar la cuenta si detecta fraude.  

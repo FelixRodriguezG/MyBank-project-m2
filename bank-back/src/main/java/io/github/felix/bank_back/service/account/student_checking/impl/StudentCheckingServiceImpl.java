@@ -5,8 +5,11 @@ import io.github.felix.bank_back.dto.account.student_checking.StudentCheckingRes
 import io.github.felix.bank_back.dto.user.account_holder.AccountHolderDTO;
 import io.github.felix.bank_back.model.account.StudentChecking;
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.transaction.Transaction;
+import io.github.felix.bank_back.model.transaction.enums.TransactionType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import io.github.felix.bank_back.repository.account.StudentCheckingRepository;
+import io.github.felix.bank_back.repository.transaction.TransactionRepository;
 import io.github.felix.bank_back.repository.user.AccountHolderRepository;
 import io.github.felix.bank_back.service.account.student_checking.interfaces.StudentCheckingService;
 import org.springframework.stereotype.Service;
@@ -21,11 +24,14 @@ public class StudentCheckingServiceImpl implements StudentCheckingService {
 
     private final StudentCheckingRepository studentCheckingRepository;
     private final AccountHolderRepository accountHolderRepository;
+    private final TransactionRepository transactionRepository;
 
     public StudentCheckingServiceImpl(StudentCheckingRepository studentCheckingRepository,
-                                      AccountHolderRepository accountHolderRepository) {
+                                      AccountHolderRepository accountHolderRepository,
+                                      TransactionRepository transactionRepository) {
         this.studentCheckingRepository = studentCheckingRepository;
         this.accountHolderRepository = accountHolderRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -72,8 +78,16 @@ public class StudentCheckingServiceImpl implements StudentCheckingService {
         StudentChecking acc = studentCheckingRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("StudentChecking no encontrado"));
         Currency currency = acc.getBalance().getCurrencyCode();
+        BigDecimal old = acc.getBalance().getAmount();
         acc.setBalance(new Money(newBalance, currency));
         studentCheckingRepository.save(acc);
+        // Registrar transacción por ajuste de balance (depósito o retiro)
+        BigDecimal diff = newBalance.subtract(old);
+        if (diff.compareTo(BigDecimal.ZERO) > 0) {
+            transactionRepository.save(new Transaction(new Money(diff, currency), TransactionType.DEPOSIT, acc, "Balance update"));
+        } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
+            transactionRepository.save(new Transaction(new Money(diff.abs(), currency), TransactionType.WITHDRAWAL, acc, "Balance update"));
+        }
     }
 
     @Override

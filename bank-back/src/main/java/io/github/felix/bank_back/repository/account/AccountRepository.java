@@ -40,7 +40,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     // * Búsqueda para aplicar penalización a las cuentas StudentChecking
     // * Cuentas de ahorro de estudiante con balance menor a 0
-    @Query("SELECT a FROM Account a WHERE a.accountType = 'STUDENT' AND a.balance.amount < 0")
+    @Query("SELECT a FROM Account a WHERE a.accountType = 'STUDENT_CHECKING' AND a.balance.amount < 0")
     List<Account> findStudentAccountsByBalanceLessThanZero();
 
     // --- Búsqueda por fecha ---

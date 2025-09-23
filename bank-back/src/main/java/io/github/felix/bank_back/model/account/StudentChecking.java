@@ -24,14 +24,19 @@ public class StudentChecking extends Account{
 
 
     // * Constructor con AccountHolder(propietario principal)
+    private static AccountHolder requireOwner(AccountHolder owner) {
+        if (owner == null) throw new IllegalArgumentException("El propietario principal de la cuenta no puede ser null");
+        return owner;
+    }
+
     public StudentChecking(Money balance, String secretKey, AccountHolder primaryOwner) {
-        super(balance, secretKey, primaryOwner, AccountType.STUDENT_CHECKING);
+        super(balance, secretKey, requireOwner(primaryOwner), AccountType.STUDENT_CHECKING);
         validateStudentEligibility(primaryOwner);
     }
 
     // * Constructor con AccountHolder(propietario principal) y AccountHolder(propietario secundario)
     public StudentChecking(Money balance, String secretKey, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
-        super(balance, secretKey, primaryOwner, secondaryOwner, AccountType.STUDENT_CHECKING);
+        super(balance, secretKey, requireOwner(primaryOwner), secondaryOwner, AccountType.STUDENT_CHECKING);
         validateStudentEligibility(primaryOwner);
         if (secondaryOwner != null) {
             validateStudentEligibility(secondaryOwner);

@@ -1,11 +1,14 @@
 package io.github.felix.bank_back.service.user.third_party.impl;
 
 import io.github.felix.bank_back.dto.transaction.ThirdPartyTransactionDTO;
+import io.github.felix.bank_back.dto.user.third_party.ThirdPartyCreateDTO;
+import io.github.felix.bank_back.dto.user.third_party.ThirdPartyResponseDTO;
+import io.github.felix.bank_back.model.user.ThirdParty;
+import io.github.felix.bank_back.model.user.enums.UserStatus;
 import io.github.felix.bank_back.model.account.Account;
 import io.github.felix.bank_back.model.account.embedded.Money;
 import io.github.felix.bank_back.model.transaction.Transaction;
 import io.github.felix.bank_back.model.transaction.enums.TransactionType;
-import io.github.felix.bank_back.model.user.ThirdParty;
 import io.github.felix.bank_back.repository.account.AccountRepository;
 import io.github.felix.bank_back.repository.transaction.TransactionRepository;
 import io.github.felix.bank_back.repository.user.ThirdPartyRepository;
@@ -70,5 +73,15 @@ public class ThirdPartyServiceImpl implements ThirdPartyService {
         transactionRepository.save(new Transaction(new Money(amount, account.getBalance().getCurrencyCode()),
                 TransactionType.WITHDRAWAL, account, tp, "Third-party withdrawal"));
     }
-}
 
+    @Override
+    public ThirdPartyResponseDTO create(ThirdPartyCreateDTO dto) {
+        ThirdParty tp = new ThirdParty();
+        tp.setName(dto.getName());
+        tp.setStatus(UserStatus.ACTIVE);
+        // setPassword() hashea y guarda en hashedKey
+        tp.setPassword(dto.getKey());
+        ThirdParty saved = thirdPartyRepository.save(tp);
+        return new ThirdPartyResponseDTO(saved.getId(), saved.getName(), saved.getHashedKey(), saved.getStatus());
+    }
+}

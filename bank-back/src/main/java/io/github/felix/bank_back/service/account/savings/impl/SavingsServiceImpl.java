@@ -5,8 +5,11 @@ import io.github.felix.bank_back.dto.account.savings.SavingsResponseDTO;
 import io.github.felix.bank_back.dto.user.account_holder.AccountHolderDTO;
 import io.github.felix.bank_back.model.account.Savings;
 import io.github.felix.bank_back.model.account.embedded.Money;
+import io.github.felix.bank_back.model.transaction.Transaction;
+import io.github.felix.bank_back.model.transaction.enums.TransactionType;
 import io.github.felix.bank_back.model.user.AccountHolder;
 import io.github.felix.bank_back.repository.account.SavingsRepository;
+import io.github.felix.bank_back.repository.transaction.TransactionRepository;
 import io.github.felix.bank_back.repository.user.AccountHolderRepository;
 import io.github.felix.bank_back.service.account.savings.interfaces.SavingsService;
 import org.springframework.stereotype.Service;
@@ -21,11 +24,14 @@ public class SavingsServiceImpl implements SavingsService {
 
     private final SavingsRepository savingsRepository;
     private final AccountHolderRepository accountHolderRepository;
+    private final TransactionRepository transactionRepository;
 
     public SavingsServiceImpl(SavingsRepository savingsRepository,
-                              AccountHolderRepository accountHolderRepository) {
+                              AccountHolderRepository accountHolderRepository,
+                              TransactionRepository transactionRepository) {
         this.savingsRepository = savingsRepository;
         this.accountHolderRepository = accountHolderRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -82,8 +88,16 @@ public class SavingsServiceImpl implements SavingsService {
         Savings acc = savingsRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings no encontrada"));
         Currency currency = acc.getBalance().getCurrencyCode();
+        BigDecimal old = acc.getBalance().getAmount();
         acc.setBalance(new Money(newBalance, currency));
         savingsRepository.save(acc);
+        // Registrar transacción por ajuste de balance (depósito o retiro)
+        BigDecimal diff = newBalance.subtract(old);
+        if (diff.compareTo(BigDecimal.ZERO) > 0) {
+            transactionRepository.save(new Transaction(new Money(diff, currency), TransactionType.DEPOSIT, acc, "Balance update"));
+        } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
+            transactionRepository.save(new Transaction(new Money(diff.abs(), currency), TransactionType.WITHDRAWAL, acc, "Balance update"));
+        }
     }
 
     @Override
@@ -100,8 +114,13 @@ public class SavingsServiceImpl implements SavingsService {
     public SavingsResponseDTO applyInterest(Long accountId) {
         Savings acc = savingsRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings no encontrada"));
-        if (acc.applyAnnualInterest()) {
+        // Calcular interés antes de aplicarlo para registrarlo
+        Money interest = acc.calculateAnnualInterest();
+        boolean applied = acc.applyAnnualInterest();
+        if (applied && interest.getAmount().compareTo(BigDecimal.ZERO) > 0) {
             acc = savingsRepository.save(acc);
+            transactionRepository.save(new Transaction(new Money(interest.getAmount(), interest.getCurrencyCode()),
+                    TransactionType.INTEREST_PAYMENT, acc, "Savings annual interest"));
         }
         return toDTO(acc);
     }
@@ -111,7 +130,11 @@ public class SavingsServiceImpl implements SavingsService {
         Savings acc = savingsRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings no encontrada"));
         if (acc.isBelowMinimumBalance()) {
-            // Penalización está en Account; asumimos que otra capa la aplica si hace falta.
+            Money penalty = new Money(BigDecimal.valueOf(40), acc.getBalance().getCurrencyCode());
+            acc.setBalance(new Money(acc.getBalance().decreaseAmount(penalty)));
+            acc = savingsRepository.save(acc);
+            transactionRepository.save(new Transaction(new Money(penalty.getAmount(), penalty.getCurrencyCode()),
+                    TransactionType.PENALTY_FEE, acc, "Penalty fee below minimum (savings)"));
         }
         return toDTO(acc);
     }

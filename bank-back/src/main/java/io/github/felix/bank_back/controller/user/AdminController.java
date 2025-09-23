@@ -3,7 +3,13 @@ package io.github.felix.bank_back.controller.user;
 import io.github.felix.bank_back.dto.user.Admin.AdminCreateDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminResponseDTO;
 import io.github.felix.bank_back.dto.user.Admin.AdminUpdateDTO;
+import io.github.felix.bank_back.dto.user.account_holder.AccountHolderCreateDTO;
+import io.github.felix.bank_back.dto.user.account_holder.AccountHolderDTO;
+import io.github.felix.bank_back.dto.user.third_party.ThirdPartyCreateDTO;
+import io.github.felix.bank_back.dto.user.third_party.ThirdPartyResponseDTO;
 import io.github.felix.bank_back.service.user.admin.impl.AdminServiceImpl;
+import io.github.felix.bank_back.service.user.account_holder.impl.AccountHolderServiceImpl;
+import io.github.felix.bank_back.service.user.third_party.impl.ThirdPartyServiceImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +29,15 @@ import java.util.List;
 public class AdminController {
 
     private final AdminServiceImpl adminService;
+    private final AccountHolderServiceImpl accountHolderService;
+    private final ThirdPartyServiceImpl thirdPartyService;
 
-    public AdminController(AdminServiceImpl adminService) {
+    public AdminController(AdminServiceImpl adminService,
+                           AccountHolderServiceImpl accountHolderService,
+                           ThirdPartyServiceImpl thirdPartyService) {
         this.adminService = adminService;
+        this.accountHolderService = accountHolderService;
+        this.thirdPartyService = thirdPartyService;
     }
 
     @Operation(summary = "Listar todos los administradores", description = "Devuelve la lista de todos los administradores")
@@ -91,5 +103,27 @@ public class AdminController {
             @Parameter(description = "ID del administrador a eliminar") @PathVariable Long id) {
         adminService.deleteAdmin(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ==== Gestión de titulares ====
+    @Operation(summary = "Crear titular", description = "Crea un nuevo AccountHolder")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Titular creado")
+    })
+    @PostMapping("/holders")
+    public ResponseEntity<AccountHolderDTO> createHolder(@Valid @RequestBody AccountHolderCreateDTO dto) {
+        AccountHolderDTO created = accountHolderService.createAccountHolder(dto);
+        return ResponseEntity.status(201).body(created);
+    }
+
+    // ==== Gestión de terceros ====
+    @Operation(summary = "Crear tercero", description = "Crea un nuevo ThirdParty (hashedKey se genera a partir de la clave proporcionada)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Tercero creado")
+    })
+    @PostMapping("/third-parties")
+    public ResponseEntity<ThirdPartyResponseDTO> createThirdParty(@Valid @RequestBody ThirdPartyCreateDTO dto) {
+        ThirdPartyResponseDTO tp = thirdPartyService.create(dto);
+        return ResponseEntity.status(201).body(tp);
     }
 }
